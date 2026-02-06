@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - GlobalBI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; }
+
+        /* SPLIT SCREEN LAYOUT */
+        .login-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* LEFT SIDE: Dark Navy Info Panel */
+        .login-info-side {
+            flex: 0.4;
+            background-color: #0f172a; /* Professional Dark Navy */
+            color: white;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-section { margin-bottom: 40px; }
+        .brand-section h1 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        .brand-section p { color: #94a3b8; font-size: 16px; line-height: 1.5; }
+
+        .feature-list { list-style: none; padding: 0; }
+        .feature-item { display: flex; align-items: center; margin-bottom: 20px; color: #cbd5e1; font-size: 14px; }
+        .feature-icon {
+            width: 24px; height: 24px; background: rgba(59, 130, 246, 0.2); color: #60a5fa;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;
+        }
+
+        /* RIGHT SIDE: Minimalist White Form */
+        .login-form-side {
+            flex: 0.6;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .login-container-pro { width: 100%; max-width: 380px; }
+        .login-title { font-size: 24px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        .login-subtitle { font-size: 14px; color: #64748b; margin-bottom: 32px; }
+
+        /* MINIMALIST INPUTS (Underlines) */
+        .pro-input {
+            width: 100%;
+            padding: 12px 0;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 24px;
+            transition: border-color 0.2s;
+        }
+        .pro-input:focus { border-bottom-color: #3b82f6; }
+
+        /* PROFESSIONAL BUTTON */
+        .pro-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #0f172a;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .pro-btn:hover { background-color: #334155; }
+
+        .pro-footer { margin-top: 24px; font-size: 13px; color: #64748b; text-align: center; }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .login-wrapper { flex-direction: column; }
+            .login-info-side { display: none; }
+            .login-form-side { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        
+        <div class="login-info-side">
+            <div class="brand-section">
+                <div style="font-size: 40px; margin-bottom: 16px;">🚀</div>
+                <h1>Join GlobalBI</h1>
+                <p>Start optimizing your supply chain with enterprise-grade predictive intelligence.</p>
+            </div>
+            
+            <ul class="feature-list">
+                <li class="feature-item"><span class="feature-icon">✓</span>Full Access to Analytics Dashboard</li>
+                <li class="feature-item"><span class="feature-icon">✓</span>Unlimited AI Predictions</li>
+                <li class="feature-item"><span class="feature-icon">✓</span>Team Collaboration Tools</li>
+            </ul>
+
+            <div style="margin-top: auto; font-size: 12px; color: #475569;">
+                &copy; 2024 Global Business Intelligence.
+            </div>
+        </div>
+
+        <div class="login-form-side">
+            <div class="login-container-pro">
+                <h2 class="login-title">Create Account</h2>
+                <p class="login-subtitle">Setup your secure access</p>
+
+                <form id="registerForm">
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Username</label>
+                        <input type="text" id="reg_username" class="pro-input" placeholder="Choose a username" required>
+                    </div>
+
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Email Address</label>
+                        <input type="email" id="reg_email" class="pro-input" placeholder="name@company.com" required>
+                    </div>
+
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Password</label>
+                        <input type="password" id="reg_password" class="pro-input" placeholder="Create a strong password" required>
+                    </div>
+
+                    <button type="submit" id="regBtn" class="pro-btn">Create Account</button>
+                </form>
+
+                <div class="pro-footer">
+                    Already have an account? <a href="/static/login.html" style="color: #0f172a; font-weight: 600; text-decoration: none;">Sign In</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api/register";
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('regBtn');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Creating Account...";
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            const username = document.getElementById('reg_username').value;
+            const email = document.getElementById('reg_email').value;
+            const password = document.getElementById('reg_password').value;
+
+            try {
+                // NOTE: Assuming your backend has a /register endpoint. 
+                // If not, we will simulate success to let you test the UI flow.
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email })
+                });
+
+                if (response.ok) {
+                    alert("✅ Account Created Successfully! Please Sign In.");
+                    window.location.href = "/static/login.html";
+                } else {
+                    const data = await response.json();
+                    alert("Registration Failed: " + (data.detail || "User might already exist"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
+            } catch (error) {
+                console.error(error);
+                // Fallback for UI testing if backend route doesn't exist yet
+                alert("Server Connection Error (Check if /api/register exists)");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.style.opacity = "1";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Business Intelligence Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">📊</div>
+                    <div class="logo-text"><h2>GlobalBI</h2><p>Business Intelligence</p></div>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-label">Dashboards</div>
+                    <a href="#" class="nav-item active" onclick="showSection('executive', event)">
+                        <span class="nav-icon">📈</span> Executive Overview
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('sales', event)">
+                        <span class="nav-icon">💰</span> Sales Data
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('comparison', event)">
+                        <span class="nav-icon">🌍</span> Country Comparison
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('reports', event)">
+                        <span class="nav-icon">📄</span> Reports
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            
+            <div id="error-banner" class="card hidden" style="background-color: #fee2e2; border-color: #ef4444; margin-bottom: 24px;">
+                <div class="card-header-padded">
+                    <h3 class="card-title" style="color: #b91c1c;">Connection Error</h3>
+                    <p id="error-message" style="color: #b91c1c;">Could not connect to the backend server.</p>
+                </div>
+            </div>
+
+            <div id="executive-section" class="dashboard-section">
+                <div class="page-header">
+                    <div class="page-title"><h1>Executive Overview</h1><p>Global market insights and key performance indicators</p></div>
+                    <div class="page-actions"><span class="badge badge-outline" id="lastUpdated">Loading...</span></div>
+                </div>
+                
+                <div class="grid grid-cols-4" style="margin-bottom: 32px;">
+                    <div class="kpi-card"><div class="kpi-header"><span class="kpi-title">Total Cost</span></div><div class="kpi-value" id="kpiTotalCost">...</div><div class="kpi-change" id="kpiTotalCostChangeContainer"><span></span><span id="kpiTotalCostChange">...</span></div><div class="kpi-description">Monthly operational costs</div></div>
+                    <div class="kpi-card"><div class="kpi-header"><span class="kpi-title">Profit Margin</span></div><div class="kpi-value" id="kpiProfitMargin">...</div><div class="kpi-change" id="kpiProfitMarginChangeContainer"><span></span><span id="kpiProfitMarginChange">...</span></div><div class="kpi-description">Average profit margin</div></div>
+                    <div class="kpi-card"><div class="kpi-header"><span class="kpi-title">Risk Score</span></div><div class="kpi-value" id="kpiRiskScore">...</div><div class="kpi-change" id="kpiRiskScoreChangeContainer"><span></span><span id="kpiRiskScoreChange">...</span></div><div class="kpi-description">Global risk assessment</div></div>
+                    <div class="kpi-card"><div class="kpi-header"><span class="kpi-title">Delivery Performance</span></div><div class="kpi-value" id="kpiDeliveryPerformance">...</div><div class="kpi-change" id="kpiDeliveryPerformanceChangeContainer"><span></span><span id="kpiDeliveryPerformanceChange">...</span></div><div class="kpi-description">On-time delivery rate</div></div>
+                </div>
+
+                <div class="grid grid-cols-2" style="margin-bottom: 32px;">
+                    <div class="card"><div class="card-header"><h3 class="card-title">Profit Margin Trend</h3><p class="card-description">Monthly profit margin percentage</p></div><div class="card-content"><div class="chart-container"><canvas id="profitChart"></canvas></div></div></div>
+                    <div class="card"><div class="card-header"><h3 class="card-title">Delivery Performance</h3><p class="card-description">On-time delivery percentage by month</p></div><div class="card-content"><div class="chart-container"><canvas id="deliveryChart"></canvas></div></div></div>
+                </div>
+
+                <div class="grid grid-cols-2">
+                    <div class="card"><div class="card-header-padded"><h3 class="card-title">Orders Overview</h3><p class="card-description">Pending and shipped orders</p></div><div class="card-content"><div class="kpi-card" style="padding: 0 0 16px 0;"><div class="kpi-value" id="totalPendingOrders">--</div><div class="kpi-description">Total Pending Orders</div></div><div class="kpi-card" style="padding: 0;"><div class="kpi-value" id="shippedThisMonth">--</div><div class="kpi-description">Shipped this Month</div></div></div></div>
+                    <div class="card"><div class="card-header-padded"><h3 class="card-title">Q3 Success Prediction</h3><p class="card-description">AI-based forecast</p></div><div class="card-content"><div style="text-align: center;"><div id="predictionScore" style="font-size: 48px; font-weight: 700; color: #10b981;">--</div><p id="predictionConfidence" style="font-size: 14px; color: #64748b;">Confidence: --%</p><p id="predictionFactors" style="font-size: 12px; color: #64748b; margin-top: 16px;"><i>Loading factors...</i></p></div></div></div>
+                </div>
+            </div>
+
+            <div id="sales-section" class="dashboard-section hidden">
+                <div class="page-header"><div class="page-title"><h1>Sales Data</h1><p>Monthly sales performance and trends</p></div></div>
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Monthly Sales Revenue</h3><p class="card-description">Total revenue generated per month</p></div>
+                    <div class="card-content"><div class="chart-container" style="height: 400px;"><canvas id="salesChart"></canvas></div></div>
+                </div>
+            </div>
+
+            <div id="comparison-section" class="dashboard-section hidden">
+                <div class="page-header"><div class="page-title"><h1>Country Comparison</h1><p>Compare market metrics across multiple countries</p></div></div>
+                <div class="card"><div class="card-header-padded"><h3 class="card-title">Comparative GDP Growth</h3><p class="card-description">Key economic growth indicators by country</p></div><div class="card-content"><div class="chart-container" style="height: 400px;"><canvas id="gdpChart"></canvas></div></div></div>
+            </div>
+
+            <div id="reports-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Reports</h1>
+                        <p>Generate new analysis or view existing reports</p>
+                    </div>
+                </div>
+
+                <div class="card" style="border: 2px dashed #3b82f6; background: rgba(59, 130, 246, 0.05);">
+                    <div class="card-header-padded">
+                        <h3 class="card-title">💡 Business Idea Analysis</h3>
+                        <p class="card-description">Get AI-powered analysis including risk, supply chain insights, and financial projections.</p>
+                        <button class="btn btn-primary" style="width: 100%; margin-top:1rem;" onclick="showSection('business-analysis-form', event)">Start Business Analysis</button>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px; border: 2px dashed #10b981; background: rgba(16, 185, 129, 0.05);">
+                    <div class="card-header-padded">
+                        <h3 class="card-title">📂 Update Sales Data</h3>
+                        <p class="card-description">Upload a new CSV file to refresh the dashboard charts and KPIs.</p>
+                        
+                        <div style="display: flex; gap: 12px; margin-top: 1rem; align-items: center;">
+                            <input type="file" id="csvFile" accept=".csv" class="form-input" style="flex: 1; padding: 8px;">
+                            <button class="btn btn-primary" style="background-color: #10b981; border-color: #10b981;" onclick="uploadCSV()">
+                                Upload & Refresh
+                            </button>
+                        </div>
+                        <p style="font-size: 12px; color: #64748b; margin-top: 8px;">*Accepts .csv files only. Page will reload automatically.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="business-analysis-form-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>💡 Business Idea Analysis</h1>
+                        <p>Describe your concept for comprehensive AI-powered insights.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <form id="businessForm" onsubmit="event.preventDefault();"> 
+                            <div class="form-group">
+                                <label class="form-label">Business Idea Description</label>
+                                <textarea id="business_idea" class="form-input form-textarea" placeholder="e.g., A restaurant focused on organic food..."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2" style="gap:16px; margin-top:16px;">
+                                <div class="form-group">
+                                    <label class="form-label">Industry</label>
+                                    <select id="industry" class="form-input">
+                                        <option value="Food / Restaurant">Food / Restaurant</option>
+                                        <option value="Technology">Technology</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Manufacturing">Manufacturing</option>
+                                        <option value="Services">Services</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Market Demand (1–10)</label>
+                                    <input type="number" id="market_demand" class="form-input" min="1" max="10" value="5">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Competition Level (1–10)</label>
+                                    <input type="number" id="competition" class="form-input" min="1" max="10" value="5">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Capital Range</label>
+                                    <select id="capital_range" class="form-input">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Founder Experience</label>
+                                    <select id="experience" class="form-input">
+                                        <option value="0">Beginner (0–1 yrs)</option>
+                                        <option value="2">Intermediate (2–4 yrs)</option>
+                                        <option value="5">Expert (5+ yrs)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="button" id="generate-btn" class="btn btn-primary" style="width:100%; margin-top:20px;" onclick="generateAnalysis()">
+                                ✨ Generate AI Analysis
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="business-analysis-results-section" class="dashboard-section hidden">
+                 <div class="page-header">
+                     <div class="page-title">
+                         <button class="btn btn-outline" onclick="showSection('business-analysis-form', event)" style="margin-right: 16px;">← Back to Form</button>
+                         <div><h1>Analysis Results</h1><p>AI-powered insights for: <strong id="ideaName">New Project</strong></p></div>
+                     </div>
+                 </div>
+                 
+                 <div class="card" style="margin-bottom: 24px;">
+                     <div class="card-header-padded">
+                         <h3 class="card-title">Business Viability Score <span id="risk-badge" class="badge">--</span></h3>
+                         <div style="display: flex; align-items: center; gap: 24px; margin-top: 1rem;">
+                             <div style="font-size: 48px; font-weight: 700; color: #3b82f6;" id="score-display">--/100</div>
+                             <div style="flex: 1;"><p style="color: #475569; font-weight: 500;" id="recommendation-text">Analysis pending...</p></div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="card" style="margin-bottom: 24px;">
+                     <div class="card-header-padded">
+                         <h3 class="card-title">Key Reasons & Projections</h3>
+                         <div style="margin-top: 1rem; line-height: 1.8;">
+                             <p><strong>Investment Estimate: </strong><span id="investment-est">--</span></p>
+                             <p><strong>Projected Timeline: </strong><span id="analysisTimeline">12-18 Months</span></p>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="grid grid-cols-2">
+                      <div class="card">
+                          <div class="card-header"><h3 class="card-title">Projected Revenue (5 Years)</h3></div>
+                          <div class="card-content"><div class="chart-container"><canvas id="viabilityChart"></canvas></div></div>
+                      </div>
+                      <div class="card">
+                          <div class="card-header"><h3 class="card-title">Market Opportunity</h3></div>
+                          <div class="card-content"><div class="chart-container"><canvas id="marketChart"></canvas></div></div>
+                      </div>
+                 </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="ai-chat-widget">
+        <button id="ai-chat-toggle" class="ai-chat-fab" type="button" aria-label="Open AI assistant">
+            AI
+        </button>
+        <div id="ai-chat-panel" class="ai-chat-panel hidden" role="dialog" aria-label="AI chat">
+            <div id="ai-chat-header" class="ai-chat-header">
+                <div class="ai-chat-title">AI Assistant</div>
+                <button id="ai-chat-close" class="ai-chat-close" type="button" aria-label="Close chat">×</button>
+            </div>
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-chat-bubble ai-chat-bubble-bot">
+                    Ask me about profit, revenue, delivery performance, best sellers, or risk.
+                </div>
+            </div>
+            <div class="ai-chat-input">
+                <input id="ai-chat-input" type="text" placeholder="Type your question..." />
+                <button id="ai-chat-send" class="ai-chat-send" type="button">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

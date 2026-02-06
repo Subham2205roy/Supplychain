@@ -1,0 +1,52 @@
+order_id,product_name,category,quantity,unit_price,unit_cost,order_date,promised_delivery_date,actual_delivery_date,delivery_status,country,region_risk_score
+ORD-100,Rotary Encoder,Components,4,95.0,43.2,2025-11-01,2025-11-16,2025-11-17,Shipped,United States,0.2
+ORD-101,Servo Drive,Machinery,11,1800.0,1102.0,2025-11-02,2025-11-17,2025-11-18,Delivered,Canada,0.7
+ORD-102,Linear Actuator,Components,2,240.0,167.4,2025-11-03,2025-11-18,2025-11-19,Shipped,France,0.0
+ORD-103,Servo Drive,Machinery,11,3000.0,1532.1,2025-11-04,2025-11-19,2025-11-18,Delivered,Netherlands,0.6
+ORD-104,Gear Pump,Machinery,7,1500.0,915.5,2025-11-05,2025-11-20,2025-11-18,Delivered,Poland,0.5
+ORD-105,Solar Inverter,Electronics,4,180.0,115.8,2025-11-06,2025-11-21,2025-11-23,Delivered,Poland,0.2
+ORD-106,Gear Pump,Machinery,12,3000.0,1842.6,2025-11-07,2025-11-22,2025-11-24,Delivered,Sweden,0.3
+ORD-107,Pneumatic Valve,Components,4,55.0,29.0,2025-11-08,2025-11-23,2025-11-22,Delivered,Norway,0.8
+ORD-108,Solar Inverter,Electronics,10,650.0,413.0,2025-11-09,2025-11-24,2025-11-25,Delivered,Italy,0.2
+ORD-109,Industrial Compressor,Machinery,8,1800.0,1017.9,2025-11-10,2025-11-25,2025-11-24,Shipped,United States,1.0
+ORD-110,Gear Pump,Machinery,12,1800.0,919.8,2025-11-11,2025-11-26,2025-11-28,Delivered,Greece,0.4
+ORD-111,Smart Thermostat,Electronics,12,1200.0,541.3,2025-11-12,2025-11-27,2025-11-29,Shipped,Switzerland,0.8
+ORD-112,Servo Drive,Machinery,5,1000.0,558.9,2025-11-13,2025-11-28,2025-11-26,Shipped,Hungary,0.4
+ORD-113,Smart Thermostat,Electronics,7,850.0,496.2,2025-11-14,2025-11-29,2025-11-30,Shipped,Czechia,0.9
+ORD-114,Smart Thermostat,Electronics,3,450.0,290.0,2025-11-15,2025-11-30,2025-12-02,Shipped,Slovakia,0.8
+ORD-115,Rotary Encoder,Components,11,35.0,21.5,2025-11-16,2025-12-01,2025-11-29,Delivered,Denmark,0.0
+ORD-116,Rotary Encoder,Components,1,85.0,48.4,2025-11-17,2025-12-02,2025-12-03,Delivered,Greece,0.4
+ORD-117,Servo Drive,Machinery,4,1800.0,894.5,2025-11-18,2025-12-03,2025-12-02,Delivered,Canada,0.6
+ORD-118,Industrial Compressor,Machinery,5,2200.0,1277.0,2025-11-19,2025-12-04,2025-12-03,Delivered,Germany,0.3
+ORD-119,Rotary Encoder,Components,12,35.0,17.3,2025-11-20,2025-12-05,2025-12-03,Delivered,India,0.8
+ORD-120,Industrial Compressor,Machinery,3,3000.0,1548.7,2025-11-21,2025-12-06,2025-12-06,Delivered,Australia,0.1
+ORD-121,Gear Pump,Machinery,8,3000.0,1551.1,2025-11-22,2025-12-07,2025-12-06,Delivered,Finland,0.4
+ORD-122,Smart Thermostat,Electronics,10,320.0,159.8,2025-11-23,2025-12-08,2025-12-09,Shipped,Ireland,0.3
+ORD-123,Smart Thermostat,Electronics,11,180.0,116.2,2025-11-24,2025-12-09,2025-12-09,Delivered,Australia,0.6
+ORD-124,Solar Inverter,Electronics,5,320.0,172.7,2025-11-25,2025-12-10,2025-12-10,Delivered,Slovakia,0.8
+ORD-125,Servo Drive,Machinery,1,3000.0,1970.1,2025-11-26,2025-12-11,2025-12-11,Shipped,Czechia,0.5
+ORD-126,Smart Thermostat,Electronics,9,320.0,176.5,2025-11-27,2025-12-12,2025-12-13,Pending,Brazil,0.7
+ORD-127,CNC Controller,Electronics,10,280.0,171.3,2025-11-28,2025-12-13,2025-12-13,Delivered,Romania,0.7
+ORD-128,Rotary Encoder,Components,2,240.0,105.9,2025-11-29,2025-12-14,2025-12-14,Delivered,Slovakia,0.5
+ORD-129,Hydraulic Motor,Machinery,3,3000.0,1875.6,2025-11-30,2025-12-15,2025-12-17,Shipped,Brazil,0.3
+ORD-130,Smart Thermostat,Electronics,12,450.0,283.5,2025-12-01,2025-12-16,2025-12-17,Delivered,Switzerland,0.7
+ORD-131,CNC Controller,Electronics,4,1200.0,637.1,2025-12-02,2025-12-17,2025-12-19,Pending,Sweden,0.2
+ORD-132,Linear Actuator,Components,8,85.0,48.8,2025-12-03,2025-12-18,2025-12-18,Shipped,India,0.0
+ORD-133,Solar Inverter,Electronics,2,650.0,350.8,2025-12-04,2025-12-19,2025-12-22,Pending,Austria,0.7
+ORD-134,Smart Thermostat,Electronics,5,1200.0,719.2,2025-12-05,2025-12-20,2025-12-21,Pending,Sweden,0.3
+ORD-135,Gear Pump,Machinery,11,1200.0,744.0,2025-12-06,2025-12-21,2025-12-20,Delivered,Portugal,0.4
+ORD-136,Linear Actuator,Components,8,65.0,34.5,2025-12-07,2025-12-22,2025-12-22,Delivered,Netherlands,0.5
+ORD-137,Flow Meter,Components,12,95.0,52.2,2025-12-08,2025-12-23,2025-12-23,Shipped,Sweden,1.0
+ORD-138,Flow Meter,Components,6,65.0,40.6,2025-12-09,2025-12-24,2025-12-27,Pending,Sweden,0.6
+ORD-139,CNC Controller,Electronics,12,180.0,83.7,2025-12-10,2025-12-25,2025-12-25,Delivered,Australia,0.3
+ORD-140,Solar Inverter,Electronics,9,220.0,140.2,2025-12-11,2025-12-26,2025-12-27,Shipped,Japan,0.2
+ORD-141,Linear Actuator,Components,7,55.0,26.2,2025-12-12,2025-12-27,2025-12-26,Delivered,Hungary,0.7
+ORD-142,Servo Drive,Machinery,6,3000.0,1633.8,2025-12-13,2025-12-28,2025-12-30,Pending,India,0.6
+ORD-143,Gear Pump,Machinery,10,3000.0,1771.0,2025-12-14,2025-12-29,2025-12-31,Shipped,Italy,0.8
+ORD-144,Gear Pump,Machinery,3,3000.0,1458.2,2025-12-15,2025-12-30,2025-12-30,Delivered,Czechia,0.3
+ORD-145,Hydraulic Motor,Machinery,6,1000.0,669.3,2025-12-16,2025-12-31,2025-12-30,Delivered,Netherlands,0.4
+ORD-146,Gear Pump,Machinery,5,900.0,595.9,2025-12-17,2026-01-01,2025-12-31,Shipped,Greece,0.1
+ORD-147,HMI Display,Electronics,3,850.0,406.0,2025-12-18,2026-01-02,2026-01-01,Shipped,Bulgaria,0.3
+ORD-148,Smart Thermostat,Electronics,8,850.0,456.2,2025-12-19,2026-01-03,2026-01-04,Delivered,United States,1.0
+ORD-149,Rotary Encoder,Components,9,85.0,44.4,2025-12-20,2026-01-04,2026-01-03,Delivered,Canada,0.2
+ORD-150,Linear Actuator,Components,9,240.0,163.3,2025-12-21,2026-01-05,2026-01-06,Delivered,Ireland,0.6

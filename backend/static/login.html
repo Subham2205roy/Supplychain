@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GlobalBI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-deep: #0b1020;
+            --bg-mid: #0f172a;
+            --bg-soft: #f8fafc;
+            --accent: #2563eb;
+            --accent-2: #14b8a6;
+            --accent-3: #f59e0b;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --line: rgba(148, 163, 184, 0.35);
+            --glass: rgba(255, 255, 255, 0.85);
+            --shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: radial-gradient(1200px at 15% 15%, #1e293b 0%, #0b1020 50%, #070b15 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .login-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+        }
+
+        .login-visual {
+            position: relative;
+            padding: clamp(32px, 6vw, 72px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.9));
+        }
+
+        .login-visual::before {
+            content: "";
+            position: absolute;
+            inset: -20%;
+            background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.35), transparent 55%),
+                        radial-gradient(circle at 70% 20%, rgba(20, 184, 166, 0.35), transparent 50%),
+                        radial-gradient(circle at 60% 80%, rgba(245, 158, 11, 0.25), transparent 60%);
+            animation: drift 14s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .login-visual::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+            background-size: 36px 36px;
+            opacity: 0.25;
+            z-index: 0;
+        }
+
+        .brand-block {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .logo-mark {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #2563eb, #14b8a6);
+            color: #0b1020;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            display: grid;
+            place-items: center;
+            letter-spacing: 1px;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+        }
+
+        .brand-copy h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(28px, 3vw, 40px);
+            margin-bottom: 8px;
+        }
+
+        .brand-copy p {
+            color: #cbd5f5;
+            font-size: 15px;
+            max-width: 340px;
+        }
+
+        .signal-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .signal-card {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 16px;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 18px 32px rgba(2, 6, 23, 0.5);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .signal-card:nth-child(2) { animation-delay: 0.6s; }
+        .signal-card:nth-child(3) { animation-delay: 1.2s; grid-column: span 2; }
+
+        .signal-label {
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .signal-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .signal-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.2);
+            color: #bfdbfe;
+            font-size: 12px;
+        }
+
+        .route-line {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #14b8a6, #2563eb, #f59e0b);
+            background-size: 200% 100%;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .login-form-side {
+            background: var(--bg-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(24px, 4vw, 64px);
+        }
+
+        .login-card {
+            width: min(440px, 100%);
+            background: var(--glass);
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            padding: 36px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .login-card::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: 26px;
+            background: linear-gradient(120deg, rgba(37, 99, 235, 0.35), rgba(20, 184, 166, 0.35), rgba(245, 158, 11, 0.35));
+            z-index: -1;
+            filter: blur(18px);
+        }
+
+        .login-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .form-group { margin-bottom: 18px; }
+
+        .form-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .login-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            background: #ffffff;
+        }
+
+        .pro-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(120deg, #2563eb, #14b8a6);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .pro-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.35);
+        }
+
+        .login-footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .login-footer a {
+            color: var(--text-dark);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(-3%, 2%, 0) scale(1.05); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes pulse {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @media (max-width: 960px) {
+            .login-shell { grid-template-columns: 1fr; }
+            .login-visual { min-height: 40vh; }
+        }
+
+        @media (max-width: 600px) {
+            .login-visual { padding: 28px; }
+            .signal-grid { grid-template-columns: 1fr; }
+            .signal-card:nth-child(3) { grid-column: span 1; }
+            .login-card { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-shell">
+        <section class="login-visual">
+            <div class="brand-block">
+                <div class="logo-mark">GB</div>
+                <div class="brand-copy">
+                    <h1>GlobalBI Command Center</h1>
+                    <p>Real-time supply chain intelligence that mirrors your dashboard performance.</p>
+                </div>
+            </div>
+
+            <div></div>
+        </section>
+
+        <section class="login-form-side">
+            <div class="login-card">
+                <h2 class="login-title">Sign In</h2>
+                <p class="login-subtitle">Access your supply chain dashboard with a single secure step.</p>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input type="email" id="email" class="login-input" placeholder="name@company.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="login-input" placeholder="Enter your password" required>
+                    </div>
+
+                    <button type="submit" id="loginBtn" class="pro-btn">Authenticate</button>
+                </form>
+
+                <div class="login-footer">
+                    New Employee? <a href="/static/register.html">Register Account</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api/login";
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            // GET DATA FROM INPUTS
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // KEY FIX: We send "email", not "username"
+                    body: JSON.stringify({ email: email, password: password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('username', data.username);
+                    window.location.href = "/dashboard"; 
+                } else {
+                    alert("Login Failed: " + (data.detail || "Invalid credentials"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Connection Error");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
