@@ -3,7 +3,7 @@ import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
 import os
 
@@ -14,10 +14,10 @@ CSV_PATH = os.path.join(BASE_DIR, "real_startup_data.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "business_success_model.joblib")
 ENCODER_PATH = os.path.join(BASE_DIR, "industry_encoder.joblib")
 
-print("🚀 Loading Production Dataset (investments_VC.csv)...")
+print("Loading Production Dataset (investments_VC.csv)...")
 
 if not os.path.exists(CSV_PATH):
-    print(f"❌ Error: {CSV_PATH} not found.")
+    print(f"Error: {CSV_PATH} not found.")
     print("   Please rename your downloaded file to 'real_startup_data.csv' and put it in backend/ml/")
     exit()
 
@@ -105,7 +105,7 @@ df['market_size'] = df['industry'].apply(estimate_market_size)
 
 # --- TRAINING ---
 
-print(f"⚙️  Training on {len(df)} Cleaned & Verified Rows...")
+print(f"Training on {len(df)} cleaned & verified rows...")
 
 # Encode Industry
 encoder = LabelEncoder()
@@ -119,14 +119,27 @@ y = df['success']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Train
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(
+    n_estimators=400,
+    max_depth=12,
+    min_samples_leaf=2,
+    max_features="sqrt",
+    class_weight="balanced",
+    n_jobs=-1,
+    random_state=42,
+)
 model.fit(X_train, y_train)
 
 # Evaluate
 acc = accuracy_score(y_test, y_pred=model.predict(X_test))
-print(f"✅ Accuracy on Real Data: {acc*100:.2f}%")
+print(f"Accuracy on holdout: {acc*100:.2f}%")
+
+# Cross-validated F1 (weighted) to catch class imbalance
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+cv_scores = cross_val_score(model, X, y, cv=cv, scoring="f1_weighted")
+print(f"5-fold CV F1 (weighted): {cv_scores.mean():.4f} +/- {cv_scores.std():.4f}")
 
 # Save
 joblib.dump(model, MODEL_PATH)
 joblib.dump(encoder, ENCODER_PATH)
-print(f"💾 Saved real-world model to {MODEL_PATH}")
+print(f"Saved real-world model to {MODEL_PATH}")

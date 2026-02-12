@@ -1,17 +1,41 @@
-import os
-from fastapi import FastAPI
+﻿import os
+import re
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from backend.settings import settings
 
 # 1. Imports
 from backend.routes.auth_routes import router as auth_router
 from backend.routes import main_routes, sales_routes, upload_routes
 from backend.routes import team_routes, ai_routes
 
+# Business idea validation keywords
+_BUSINESS_KEYWORDS = {
+    "shop", "store", "market", "retail", "wholesale", "logistics", "supply",
+    "chain", "inventory", "warehouse", "delivery", "shipping", "transport",
+    "manufacturing", "factory", "production", "service", "services", "saas",
+    "software", "platform", "b2b", "b2c", "subscription", "restaurant",
+    "food", "cafe", "grocery", "pharmacy", "health", "medical", "device",
+    "ecommerce", "commerce", "online", "app", "marketplace", "trading",
+    "export", "import", "procurement", "sourcing", "logistic"
+}
+
+
+def _validate_business_text(text: str) -> str:
+    idea_text = (text or "").strip()
+    words = re.findall(r"[A-Za-z]{3,}", idea_text.lower())
+    if len(idea_text) < 15 or len(words) < 3:
+        raise HTTPException(status_code=400, detail="Please describe the business in a short sentence (at least 3 real words).")
+    if not any(k in idea_text.lower() for k in _BUSINESS_KEYWORDS):
+        raise HTTPException(status_code=400, detail="Mention a business/commerce term (e.g., logistics, retail, store, platform).")
+    return idea_text
+
 # 2. CREATE THE APP
-app = FastAPI()  
+app = FastAPI()
 
 # 3. ATTACH ROUTERS
 app.include_router(auth_router)
@@ -30,9 +54,13 @@ except ImportError:
     model_available = False
 
 # --- Middleware ---
+ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -68,15 +96,16 @@ def read_dashboard():
 # --- DATA MODEL ---
 class BusinessInput(BaseModel):
     industry: str
-    market_demand: int      
-    competition: int        
-    capital_range: str      
-    experience: int         
-    idea: str               
+    market_demand: int
+    competition: int
+    capital_range: str
+    experience: int
+    idea: str
 
 # --- AI ENDPOINT ---
 @app.post("/ai/business-viability")
 def business_viability(data: BusinessInput):
+    idea_text = _validate_business_text(data.idea)
     
     # 1. Convert Capital Range -> Real Money
     if data.capital_range == "High":
@@ -90,10 +119,10 @@ def business_viability(data: BusinessInput):
         est_cost = "$5,000 - $15,000"
 
     # 2. Convert Market Demand -> Estimated Market Size
-    real_market_size = data.market_demand * 10000 
+    real_market_size = data.market_demand * 10000
 
     # 3. ML Prediction Logic
-    viability_score = 50 
+    viability_score = 50
 
     if model_available:
         try:
@@ -130,7 +159,7 @@ def business_viability(data: BusinessInput):
     # 5. Financial Projections
     growth_rate = 1.15 + (viability_score / 400)
     base_revenue = real_capital * 0.5
-    
+
     revenue_curve = [
         int(base_revenue * (growth_rate ** i)) for i in range(1, 6)
     ]
@@ -144,5 +173,7 @@ def business_viability(data: BusinessInput):
             "revenue_curve": revenue_curve
         },
         "competition": data.competition,
+        "market_demand": data.market_demand,
+        "experience": data.experience,
         "model_used": model_used
     }

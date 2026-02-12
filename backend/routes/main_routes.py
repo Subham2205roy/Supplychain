@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+import re
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import random
 from sqlalchemy.orm import Session
@@ -13,6 +14,25 @@ router = APIRouter()
 
 class BusinessIdea(BaseModel):
     idea: str
+
+_BUSINESS_KEYWORDS = {
+    "shop", "store", "market", "retail", "wholesale", "logistics", "supply",
+    "chain", "inventory", "warehouse", "delivery", "shipping", "transport",
+    "manufacturing", "factory", "production", "service", "services", "saas",
+    "software", "platform", "b2b", "b2c", "subscription", "restaurant",
+    "food", "cafe", "grocery", "pharmacy", "health", "medical", "device",
+    "ecommerce", "commerce", "online", "app", "marketplace", "trading",
+    "export", "import", "procurement", "sourcing", "logistic"
+}
+
+def _validate_business_text(text: str) -> str:
+    idea_text = (text or "").strip()
+    words = re.findall(r"[A-Za-z]{3,}", idea_text.lower())
+    if len(idea_text) < 15 or len(words) < 3:
+        raise HTTPException(status_code=400, detail="Please describe the business in a short sentence (at least 3 real words).")
+    if not any(k in idea_text.lower() for k in _BUSINESS_KEYWORDS):
+        raise HTTPException(status_code=400, detail="Mention a business/commerce term (e.g., logistics, retail, store, platform).")
+    return idea_text
 
 @router.get("/api/kpis")
 def get_kpis(
@@ -85,8 +105,48 @@ def get_delivery_trend(
     return {"labels": labels, "data": data}
 
 @router.get("/api/gdp-comparison")
-def get_gdp_comparison(current_user: User = Depends(get_current_user)):
-    return {"labels": ["USA", "Germany", "China", "India", "Brazil"], "data": [2.1, 0.5, 5.2, 6.5, 0.8]}
+def get_gdp_comparison(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    revenue_by_country = (
+        db.query(
+            Sale.country.label("country"),
+            func.sum(Sale.unit_price * Sale.quantity).label("total_revenue")
+        )
+        .filter(Sale.company_id == current_user.company_id)
+        .group_by(Sale.country)
+        .order_by(func.sum(Sale.unit_price * Sale.quantity).desc())
+        .all()
+    )
+
+    labels = [(row.country or "Unknown") for row in revenue_by_country]
+    data = [row.total_revenue for row in revenue_by_country]
+
+    return {"labels": labels, "data": data}
+
+
+@router.get("/api/revenue-history")
+def get_revenue_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Return annual revenue (unit_price * quantity) for the last 5 years including current year."""
+    five_years_ago = datetime.date.today().year - 4
+    results = (
+        db.query(
+            func.strftime("%Y", Sale.order_date).label("year"),
+            func.sum(Sale.unit_price * Sale.quantity).label("total_revenue")
+        )
+        .filter(Sale.company_id == current_user.company_id)
+        .filter(Sale.order_date >= datetime.date(five_years_ago, 1, 1))
+        .group_by("year")
+        .order_by("year")
+        .all()
+    )
+    labels = [row.year for row in results]
+    data = [row.total_revenue for row in results]
+    return {"labels": labels, "data": data}
 
 @router.get("/api/orders-overview")
 def get_orders_overview(
@@ -161,7 +221,8 @@ def get_success_prediction(
 
 @router.post("/api/analyze")
 def analyze_idea(idea_data: BusinessIdea):
-    idea_name = " ".join(idea_data.idea.split()[:4]) + "..."
+    idea_text = _validate_business_text(idea_data.idea)
+    idea_name = " ".join(idea_text.split()[:4]) + "..."
     score = random.randint(65, 90)
     return { "idea_name": idea_name, "score": score, "recommendation": "Promising venture with high potential." if score > 75 else "Moderate potential, requires validation.", "top_reasons": ["Strong market demand", "Favorable regulatory environment", "Scalable business model"], "investment": f"${random.randint(5, 8)}0,000 - ${random.randint(9, 15)}0,000", "timeline": f"{random.randint(9, 12)}-{random.randint(13, 18)} Months to MVP", "charts": { "financials": { "labels": ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"], "revenue": [5000, 25000, 60000, 110000, 180000, 260000], "cost": [15000, 20000, 22000, 25000, 28000, 32000] }, "market": { "labels": ["Target Audience", "Adjacent Markets", "Niche Segments"], "data": [65, 25, 10] } } }
 # Add this missing function to your main_routes.py file

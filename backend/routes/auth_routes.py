@@ -1,25 +1,85 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+﻿from datetime import datetime
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from datetime import datetime
+from sqlalchemy.orm import Session
 
-# --- IMPORTS ---
 from backend.database.database import get_db
 from backend.models.user_model import User
 from backend.models.company_model import Company
 from backend.models.team_invite_model import TeamInvite
 from backend.schemas import UserCreate, UserLogin, UserResponse, Token
-from backend.routes.auth_utils import hash_password, verify_password, create_access_token
+from backend.routes.auth_utils import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+)
+from backend.settings import settings
 
-# --- CONFIG ---
-SECRET_KEY = "supersecretkey"  # Make sure this matches auth_utils.py if you have one there
-ALGORITHM = "HS256"
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+# OAuth2PasswordBearer still supports Authorization header; auto_error=False lets us fall back to cookies
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
 router = APIRouter(tags=["Authentication"])
 
-# 1. REGISTER
+
+def _decode_token(token: str, expected_typ: str):
+    try:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.jwt_algorithm],
+            audience=settings.jwt_audience,
+            issuer=settings.jwt_issuer,
+        )
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
+    if payload.get("typ") != expected_typ:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong token type")
+    return payload
+
+
+def _issue_tokens(user: User):
+    jti = str(uuid.uuid4())
+    access = create_access_token(user.email, user.hashed_password, jti)
+    refresh = create_refresh_token(user.email, user.hashed_password, jti)
+    return access, refresh
+
+
+def _set_access_cookie(resp: Response, token: str):
+    resp.set_cookie(
+        "access_token",
+        token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
+        max_age=settings.access_token_minutes * 60,
+        path="/",
+    )
+
+
+def _set_refresh_cookie(resp: Response, token: str):
+    resp.set_cookie(
+        "refresh_token",
+        token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
+        max_age=settings.refresh_token_days * 24 * 3600,
+        path="/api/refresh",
+    )
+
+
+def _clear_cookies(resp: Response):
+    resp.delete_cookie("access_token", path="/")
+    resp.delete_cookie("refresh_token", path="/api/refresh")
+
+
 @router.post("/api/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
@@ -69,42 +129,64 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
-# 2. LOGIN
-@router.post("/api/login", response_model=Token)
-def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
-    # Find user by Email
-    user = db.query(User).filter(User.email == user_credentials.email).first()
-    
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid Credentials")
-    
-    if not verify_password(user_credentials.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Invalid Credentials")
-    
-    # Create Token
-    access_token = create_access_token(data={"sub": user.email}) # Store email in token
-    
-    return {"access_token": access_token, "token_type": "bearer", "username": user.username}
 
-# ==========================================
-# 👇 THIS IS THE MISSING FUNCTION 👇
-# ==========================================
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-        
+@router.post("/api/login", response_model=Token)
+def login(user_credentials: UserLogin, response: Response, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == user_credentials.email).first()
+
+    if not user or not verify_password(user_credentials.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Invalid Credentials")
+
+    access, refresh = _issue_tokens(user)
+    _set_access_cookie(response, access)
+    _set_refresh_cookie(response, refresh)
+
+    return {"access_token": access, "token_type": "bearer", "username": user.username}
+
+
+@router.post("/api/refresh", response_model=Token)
+def refresh_token(
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    payload = _decode_token(refresh_token, "refresh")
+    user = db.query(User).filter(User.email == payload.get("sub")).first()
+    if not user or user.hashed_password != payload.get("pwd"):
+        raise HTTPException(status_code=401, detail="Token revoked")
+
+    access, new_refresh = _issue_tokens(user)
+    _set_access_cookie(response, access)
+    _set_refresh_cookie(response, new_refresh)
+
+    return {"access_token": access, "token_type": "bearer", "username": user.username}
+
+
+@router.post("/api/logout")
+def logout(response: Response):
+    _clear_cookies(response)
+    return {"message": "Logged out"}
+
+
+def get_current_user(
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    bearer = token or request.cookies.get("access_token")
+    if not bearer:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    payload = _decode_token(bearer, "access")
+    email: str | None = payload.get("sub")
+    if email is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
     user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise credentials_exception
-        
+    if not user or user.hashed_password != payload.get("pwd"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked")
+
     return user

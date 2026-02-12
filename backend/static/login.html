@@ -329,7 +329,7 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000/api/login";
+        const API_URL = "/api/login";
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -339,7 +339,6 @@
             btn.innerText = "Verifying...";
             btn.disabled = true;
 
-            // GET DATA FROM INPUTS
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
@@ -347,16 +346,14 @@
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // KEY FIX: We send "email", not "username"
-                    body: JSON.stringify({ email: email, password: password })
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    localStorage.setItem('token', data.access_token);
-                    localStorage.setItem('username', data.username);
-                    window.location.href = "/dashboard"; 
+                    window.location.href = "/dashboard";
                 } else {
                     alert("Login Failed: " + (data.detail || "Invalid credentials"));
                     btn.innerText = originalText;
@@ -372,3 +369,6 @@
     </script>
 </body>
 </html>
+
+
+

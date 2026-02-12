@@ -1,11 +1,12 @@
 // Configuration for API endpoints
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = '/api';
 const API_URLS = {
     kpis: `${API_BASE_URL}/kpis`,
     profitTrend: `${API_BASE_URL}/profit-trend`,
     deliveryTrend: `${API_BASE_URL}/delivery-trend`,
     gdpComparison: `${API_BASE_URL}/gdp-comparison`,
     analyze: `${API_BASE_URL}/analyze`,
+    revenueHistory: `${API_BASE_URL}/revenue-history`,
     ordersOverview: `${API_BASE_URL}/orders-overview`,
     successPrediction: `${API_BASE_URL}/success-prediction`,
     salesTrend: `${API_BASE_URL}/sales-trend`,
@@ -17,29 +18,25 @@ let charts = {};
 
 /* ---------------- AUTH HELPERS ---------------- */
 
-function getAuthToken() {
-    return localStorage.getItem('token');
-}
-
-function buildAuthHeaders(extraHeaders = {}) {
-    const token = getAuthToken();
-    if (!token) return extraHeaders;
-    return { ...extraHeaders, Authorization: `Bearer ${token}` };
-}
-
 async function fetchWithAuth(url, options = {}) {
-    const headers = buildAuthHeaders(options.headers || {});
-    const response = await fetch(url, { ...options, headers });
+    const opts = { credentials: "include", ...options };
+    opts.headers = { ...(options.headers || {}) };
 
-    if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        alert("Session Expired. Please login again.");
-        window.location.href = "/";
-        throw new Error("Unauthorized");
+    let response = await fetch(url, opts);
+    if (response.status !== 401) return response;
+
+    try {
+        const refresh = await fetch("/api/refresh", { method: "POST", credentials: "include" });
+        if (refresh.ok) {
+            response = await fetch(url, opts);
+            if (response.status !== 401) return response;
+        }
+    } catch (e) {
+        console.error("Refresh failed", e);
     }
 
-    return response;
+    window.location.href = "/";
+    throw new Error("Unauthorized");
 }
 
 /* ---------------- SECTION HANDLING (Preserved) ---------------- */
@@ -107,7 +104,7 @@ async function loadDataForSection(sectionName) {
         fetchSuccessPrediction();
     } else if (sectionName === 'comparison') {
         fetchAndRenderChart('gdpComparison', 'gdpChart', initializeBarChart,
-            { label: 'GDP Growth (%)', color: '#f59e0b', indexAxis: 'y' });
+            { label: 'Revenue by Country ($)', color: '#22c55e', indexAxis: 'y' });
     } else if (sectionName === 'sales') {
         fetchAndRenderChart('salesTrend', 'salesChart', initializeLineChart,
             { label: 'Monthly Sales ($)', color: '#8b5cf6' });
@@ -225,12 +222,16 @@ async function generateAnalysis() {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error("Backend connection failed");
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({ detail: "Invalid request" }));
+            alert(errData.detail || "Invalid input. Please refine your description.");
+            return;
+        }
 
         const data = await response.json();
 
         // 6. Update UI
-        displayResults(data, ideaText);
+        await displayResults(data, ideaText);
 
     } catch (error) {
         console.error("Error:", error);
@@ -242,7 +243,7 @@ async function generateAnalysis() {
 }
 
 // Helper to update the Results UI
-function displayResults(data, ideaName) {
+async function displayResults(data, ideaName) {
     showSection('business-analysis-results');
 
     document.getElementById('ideaName').innerText = ideaName.length > 30 ? ideaName.substring(0, 30) + "..." : ideaName;
@@ -268,14 +269,20 @@ function displayResults(data, ideaName) {
         else riskBadge.style.backgroundColor = '#28a745';
     }
 
-    updateAnalysisCharts(data);
+    await updateAnalysisCharts(data);
 }
 
 // Helper to Update Charts
 let viabilityChartInstance = null;
 let marketChartInstance = null;
 
-function updateAnalysisCharts(data) {
+async function updateAnalysisCharts(data) {
+    const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+    // Use model-based projections first; no sales DB dependency
+    let revLabels = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
+    let revData = (data.projections && data.projections.revenue_curve) ? data.projections.revenue_curve : [0,0,0,0,0];
+
     // Revenue Chart
     const ctx1 = document.getElementById('viabilityChart')?.getContext('2d');
     if (ctx1) {
@@ -283,10 +290,10 @@ function updateAnalysisCharts(data) {
         viabilityChartInstance = new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                labels: revLabels,
                 datasets: [{
-                    label: 'Projected Revenue ($)',
-                    data: data.projections ? data.projections.revenue_curve : [0,0,0,0,0],
+                    label: 'Revenue ($)',
+                    data: revData,
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                     fill: true
@@ -295,6 +302,17 @@ function updateAnalysisCharts(data) {
             options: { responsive: true }
         });
     }
+
+    const demandScore = clamp((data.market_demand || 5), 0, 10);
+    const competitionScore = clamp(10 - (data.competition || 5), 0, 10);
+    const innovationScore = clamp(data.viability_score / 10, 0, 10);
+    const scalabilityScore = clamp((data.experience || 5) * 2, 0, 10);
+    const riskScore = (() => {
+        const rl = (data.risk_level || "").toLowerCase();
+        if (rl === 'high') return 3;
+        if (rl === 'medium') return 6;
+        return 9;
+    })();
 
     // Radar Chart
     const ctx2 = document.getElementById('marketChart')?.getContext('2d');
@@ -307,11 +325,11 @@ function updateAnalysisCharts(data) {
                 datasets: [{
                     label: 'Market Fit',
                     data: [
-                        (data.viability_score / 10),
-                        10 - (data.competition || 5), 
-                        (data.viability_score / 12),
-                        (data.viability_score / 11),
-                        10
+                        demandScore,
+                        competitionScore,
+                        innovationScore,
+                        scalabilityScore,
+                        riskScore
                     ],
                     backgroundColor: 'rgba(16, 185, 129, 0.2)',
                     borderColor: '#10b981'
@@ -488,7 +506,7 @@ async function uploadCSV() {
     try {
         // 3. Send to Backend
         // Note: Matches the Python @router.post("/csv") inside prefix="/upload"
-        const response = await fetchWithAuth('http://127.0.0.1:8000/upload/csv', { 
+        const response = await fetchWithAuth('/upload/csv', { 
             method: 'POST',
             body: formData
         });
@@ -519,3 +537,7 @@ async function uploadCSV() {
         fileInput.value = "";
     }
 }
+
+
+
+

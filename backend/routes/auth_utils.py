@@ -1,35 +1,43 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from jose import jwt
+﻿from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-# --- CONFIGURATION ---
-# IMPORTANT: This key must match the one in auth_routes.py if defined there.
-SECRET_KEY = "supersecretkey" 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from jose import jwt
+from passlib.context import CryptContext
 
-# Setup Password Hashing
+from backend.settings import settings
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 1. HASH PASSWORD (Lock it)
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-# 2. VERIFY PASSWORD (Check the key)
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# 3. CREATE TOKEN (Give the user a pass)
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        
-    to_encode.update({"exp": expire})
-    
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+
+def _base_claims(sub: str, jti: str, pwd_hash: str, expires_delta: timedelta):
+    now = datetime.now(timezone.utc)
+    return {
+        "sub": sub,
+        "aud": settings.jwt_audience,
+        "iss": settings.jwt_issuer,
+        "iat": int(now.timestamp()),
+        "nbf": int(now.timestamp()),
+        "exp": int((now + expires_delta).timestamp()),
+        "jti": jti,
+        "pwd": pwd_hash,
+    }
+
+
+def create_access_token(sub: str, pwd_hash: str, jti: str) -> str:
+    claims = _base_claims(sub, jti, pwd_hash, timedelta(minutes=settings.access_token_minutes))
+    claims["typ"] = "access"
+    return jwt.encode(claims, settings.secret_key, algorithm=settings.jwt_algorithm)
+
+
+def create_refresh_token(sub: str, pwd_hash: str, jti: str) -> str:
+    claims = _base_claims(sub, jti, pwd_hash, timedelta(days=settings.refresh_token_days))
+    claims["typ"] = "refresh"
+    return jwt.encode(claims, settings.secret_key, algorithm=settings.jwt_algorithm)
