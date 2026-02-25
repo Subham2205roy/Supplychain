@@ -27,7 +27,7 @@ class UserResponse(UserBase):
     company_id: Optional[int] = None
     
     class Config:
-        from_attributes = True  # Allows reading from SQLAlchemy models
+        from_attributes = True  # Pydantic V2 replacement for orm_mode
 
 # ===========================
 # 📊 SALES SCHEMAS
@@ -57,6 +57,30 @@ class Sale(SaleBase):
     owner_id: Optional[int] = None  # Added this for SaaS feature
     company_id: Optional[int] = None
     
+    class Config:
+        from_attributes = True
+
+# ===========================
+# 📦 INVENTORY SCHEMAS
+# ===========================
+
+class InventoryBase(BaseModel):
+    product_name: str
+    stock_level: int
+    reorder_point: int
+
+class InventoryCreate(InventoryBase):
+    pass
+
+class InventoryUpdate(BaseModel):
+    stock_level: Optional[int] = None
+    reorder_point: Optional[int] = None
+
+class Inventory(InventoryBase):
+    id: int
+    company_id: int
+    last_updated: Optional[date] = None
+
     class Config:
         from_attributes = True
 

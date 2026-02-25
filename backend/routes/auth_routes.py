@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+﻿from datetime import datetime, timedelta
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
@@ -130,12 +130,38 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
+from backend.limiter import limiter
+
 @router.post("/api/login", response_model=Token)
-def login(user_credentials: UserLogin, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, user_credentials: UserLogin, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_credentials.email).first()
 
-    if not user or not verify_password(user_credentials.password, user.hashed_password):
+    if not user:
         raise HTTPException(status_code=400, detail="Invalid Credentials")
+
+    # 1. Check if account is locked
+    if user.lockout_until and user.lockout_until > datetime.utcnow():
+        wait_time = int((user.lockout_until - datetime.utcnow()).total_seconds() / 60)
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Account locked due to too many failed attempts. Try again in {wait_time + 1} minutes."
+        )
+
+    # 2. Verify Password
+    if not user.hashed_password or not verify_password(user_credentials.password, user.hashed_password):
+        # Fail: Increment attempts
+        user.failed_attempts = (user.failed_attempts or 0) + 1
+        if user.failed_attempts >= 5:
+            user.lockout_until = datetime.utcnow() + timedelta(minutes=15)
+        
+        db.commit()
+        raise HTTPException(status_code=400, detail="Invalid Credentials")
+
+    # 3. Success: Reset security fields
+    user.failed_attempts = 0
+    user.lockout_until = None
+    db.commit()
 
     access, refresh = _issue_tokens(user)
     _set_access_cookie(response, access)
@@ -186,7 +212,7 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = db.query(User).filter(User.email == email).first()
-    if not user or user.hashed_password != payload.get("pwd"):
+    if not user or (user.hashed_password and user.hashed_password != payload.get("pwd")):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked")
 
     return user

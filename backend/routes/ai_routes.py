@@ -1,6 +1,10 @@
 import re
 from datetime import date, timedelta
 from typing import Optional, Tuple
+import os
+
+from google import genai
+from backend.settings import settings
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -38,6 +42,12 @@ BEST_SELLER_PHRASES = (
 
 YEAR_RE = re.compile(r"\b(20\d{2})\b")
 
+# Configure Gemini if API key is present
+if settings.google_api_key:
+    client = genai.Client(api_key=settings.google_api_key)
+else:
+    client = None
+
 
 def tokenize(query: str) -> Tuple[str, set]:
     normalized = re.sub(r"[^a-z0-9\s]", " ", query.lower())
@@ -45,7 +55,45 @@ def tokenize(query: str) -> Tuple[str, set]:
     return normalized, set(tokens)
 
 
-def detect_intent(query_lower: str, tokens: set) -> Optional[str]:
+def detect_intent_llm(query: str) -> Optional[str]:
+    """Uses LLM to detect intent with keyword fallback."""
+    if not client:
+        return _detect_intent_keywords(*tokenize(query))
+
+    prompt = f"""
+    Analyze the user's query and classify it into one of the following intents:
+    - revenue: if they ask about total sales, earings, or revenue.
+    - profit: if they ask about how much money they made, net income, or profit.
+    - profit_margin: if they ask about percentage profit or margin.
+    - best_seller: if they ask about top products or most sold items.
+    - delivery: if they ask about shipping, performance, on-time rate, or logistics.
+    - inventory: if they ask about stock, running out, or current supply labels.
+    - alerts: if they ask about warnings, risks, or generic active issues.
+    - risk: if they ask explicitly about risk scores or regional danger.
+    
+    If the query is just a greeting or irrelevant, return "none".
+    
+    Query: "{query}"
+    
+    Return ONLY the intent string (e.g., "revenue") and nothing else.
+    """
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+        intent = response.text.strip().lower()
+        if intent in ["revenue", "profit", "profit_margin", "best_seller", "delivery", "inventory", "alerts", "risk"]:
+            return intent
+    except Exception as e:
+        print(f"LLM Intent Detection Error: {e}")
+    
+    # Fallback to keywords if LLM fails or is unsure
+    return _detect_intent_keywords(*tokenize(query))
+
+
+def _detect_intent_keywords(query_lower: str, tokens: set) -> Optional[str]:
     if any(phrase in query_lower for phrase in BEST_SELLER_PHRASES):
         return "best_seller"
     if "delivery" in tokens or "delivered" in tokens or "on time" in query_lower or "on-time" in query_lower:
@@ -60,6 +108,10 @@ def detect_intent(query_lower: str, tokens: set) -> Optional[str]:
         return "revenue"
     if "cost" in tokens or "expense" in tokens or "expenses" in tokens:
         return "cost"
+    if "inventory" in tokens or "stock" in tokens or "run out" in query_lower:
+        return "inventory"
+    if "alert" in tokens or "alerts" in tokens or "risk" in tokens or "delayed" in tokens:
+        return "alerts"
     return None
 
 
@@ -133,7 +185,7 @@ def ai_chat(
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
     query_lower, tokens = tokenize(query)
-    intent = detect_intent(query_lower, tokens)
+    intent = detect_intent_llm(query)
 
     if not intent:
         return ChatResponse(
@@ -146,11 +198,52 @@ def ai_chat(
     start, end, label = get_time_window(query_lower)
     time_context = format_time_context(start, end, label)
 
-    filters = [Sale.owner_id == current_user.id]
+    filters = [Sale.company_id == current_user.company_id]
     if start and end:
         filters.extend([Sale.order_date >= start, Sale.order_date <= end])
 
     total_rows = db.query(func.count(Sale.id)).filter(*filters).scalar() or 0
+    
+    # Handle Inventory/Forecasting Intent even if no sales exist (it depends on Inventory table)
+    if intent == "inventory":
+        from backend.models.inventory_model import Inventory
+        inventory_items = db.query(Inventory).filter(Inventory.company_id == current_user.company_id).all()
+        if not inventory_items:
+            return ChatResponse(text="Your inventory is currently empty. Try uploading stock data.")
+        
+        # Simple summary of at-risk items
+        at_risk = []
+        for item in inventory_items:
+            if item.stock_level <= item.reorder_point:
+                at_risk.append(item.product_name)
+        
+        if not at_risk:
+            return ChatResponse(text="All products have healthy stock levels.")
+        
+        highlight = ", ".join(at_risk)
+        return ChatResponse(
+            text=f"The following items are low on stock: {highlight}. You should consider reordering soon.",
+            highlight=highlight
+        )
+
+    if intent == "alerts":
+        # Call the same logic as the alert endpoint
+        from backend.routes.alert_routes import get_active_alerts
+        active_alerts = get_active_alerts(db, current_user)
+        if not active_alerts:
+            return ChatResponse(text="Great news! There are no active alerts or risks detected currently.")
+        
+        summary = f"I found {len(active_alerts)} active alerts. "
+        late_count = len([a for a in active_alerts if a['type'] == 'Late Shipment'])
+        low_stock = len([a for a in active_alerts if a['type'] == 'Low Stock'])
+        
+        if late_count > 0:
+            summary += f"There are {late_count} late shipments. "
+        if low_stock > 0:
+            summary += f"There are {low_stock} items with low stock. "
+            
+        return ChatResponse(text=summary + "Check your dashboard for full details.")
+
     if total_rows == 0:
         return ChatResponse(
             text=f"I could not find any sales data for your account{time_context}."

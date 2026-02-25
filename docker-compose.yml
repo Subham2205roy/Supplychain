@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: supplychain_db
+    environment:
+      POSTGRES_USER: supplychain_user
+      POSTGRES_PASSWORD: supplychain_password
+      POSTGRES_DB: supplychain_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: .
+    container_name: supplychain_backend
+    environment:
+      - DATABASE_URL=postgresql://supplychain_user:supplychain_password@db:5432/supplychain_prod
+      - SECRET_KEY=sk_9x82ksndk28d82nsd82nsd
+      - COOKIE_DOMAIN=localhost
+      - COOKIE_SECURE=False
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:

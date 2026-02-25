@@ -10,6 +10,8 @@ const API_URLS = {
     ordersOverview: `${API_BASE_URL}/orders-overview`,
     successPrediction: `${API_BASE_URL}/success-prediction`,
     salesTrend: `${API_BASE_URL}/sales-trend`,
+    inventoryHealth: `/forecasting/inventory-health`,
+    activeAlerts: `/alerts/active`,
     businessViability: `/ai/business-viability`, // Matches Backend
     aiChat: `${API_BASE_URL}/ai/chat`
 };
@@ -39,7 +41,7 @@ async function fetchWithAuth(url, options = {}) {
     throw new Error("Unauthorized");
 }
 
-/* ---------------- SECTION HANDLING (Preserved) ---------------- */
+/* ---------------- SECTION HANDLING ---------------- */
 
 function showSection(sectionName, event) {
     if (event) event.preventDefault();
@@ -56,12 +58,12 @@ function showSection(sectionName, event) {
     const targetSection = document.getElementById(`${sectionName}-section`);
     if (!targetSection) {
         // Fallback for ID mismatches
-        if(sectionName === 'business-analysis-results') {
-             const fallback = document.getElementById('business-analysis-results-section');
-             if(fallback) { fallback.classList.remove('hidden'); return; }
+        if (sectionName === 'business-analysis-results') {
+            const fallback = document.getElementById('business-analysis-results-section');
+            if (fallback) { fallback.classList.remove('hidden'); return; }
         }
         console.error(`Section not found: ${sectionName}-section`);
-        return; 
+        return;
     }
 
     targetSection.classList.remove('hidden');
@@ -73,25 +75,23 @@ function showSection(sectionName, event) {
         .find(item => item.getAttribute('onclick')?.includes(`'${sectionName}'`));
     if (activeNavItem) activeNavItem.classList.add('active');
 
-    if (typeof loadDataForSection === 'function') {
-        loadDataForSection(sectionName);
-    }
+    loadDataForSection(sectionName);
 }
 
 
-/* ---------------- ERROR HANDLING (Preserved) ---------------- */
+/* ---------------- ERROR HANDLING ---------------- */
 
 function handleFetchError(error, context) {
     console.error(`Failed to ${context}:`, error);
     const errorBanner = document.getElementById('error-banner');
-    if(errorBanner) {
+    if (errorBanner) {
         errorBanner.querySelector('#error-message').textContent =
             `Could not connect to backend to ${context}.`;
         errorBanner.classList.remove('hidden');
     }
 }
 
-/* ---------------- DASHBOARD DATA (Preserved) ---------------- */
+/* ---------------- DASHBOARD DATA ---------------- */
 
 async function loadDataForSection(sectionName) {
     if (sectionName === 'executive') {
@@ -108,10 +108,13 @@ async function loadDataForSection(sectionName) {
     } else if (sectionName === 'sales') {
         fetchAndRenderChart('salesTrend', 'salesChart', initializeLineChart,
             { label: 'Monthly Sales ($)', color: '#8b5cf6' });
+    } else if (sectionName === 'inventory') {
+        fetchInventoryHealth();
+        fetchAlerts();
     }
 }
 
-/* ---------------- KPI & CHART HELPERS (Preserved) ---------------- */
+/* ---------------- KPI & CHART HELPERS ---------------- */
 
 async function fetchKpis() {
     try {
@@ -148,7 +151,68 @@ async function fetchSuccessPrediction() {
     } catch (e) { handleFetchError(e, "fetch prediction"); }
 }
 
-/* ---------------- CHART UTILS (Preserved) ---------------- */
+async function fetchInventoryHealth() {
+    try {
+        const res = await fetchWithAuth(API_URLS.inventoryHealth);
+        const data = await res.json();
+        const tbody = document.getElementById('inventory-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = data.map(item => `
+            <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                <td style="padding: 12px; font-weight: 500;">${item.product_name}</td>
+                <td style="padding: 12px;">${item.stock_level}</td>
+                <td style="padding: 12px;">${item.burn_rate} / day</td>
+                <td style="padding: 12px;">${item.days_left === 999 ? '∞' : item.days_left}</td>
+                <td style="padding: 12px;">${item.stock_out_date || 'N/A'}</td>
+                <td style="padding: 12px;">
+                    <span class="badge" style="background-color: ${item.status === 'Critical' ? '#fee2e2' : item.status === 'At Risk' ? '#fef3c7' : '#dcfce7'
+            }; color: ${item.status === 'Critical' ? '#b91c1c' : item.status === 'At Risk' ? '#b45309' : '#15803d'
+            };">
+                        ${item.status}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { handleFetchError(e, "fetch inventory"); }
+}
+
+async function fetchAlerts() {
+    try {
+        const res = await fetchWithAuth(API_URLS.activeAlerts);
+        const data = await res.json();
+        const container = document.getElementById('alerts-container');
+        if (!container) return;
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="card" style="border: 1px solid #dcfce7; background: #f0fdf4;">
+                    <div class="card-header-padded">
+                        <p style="color: #15803d; font-weight: 500;">✅ No active alerts. Your supply chain is running smoothly!</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.map(alert => `
+            <div class="card" style="border-left: 4px solid ${alert.severity === 'High' ? '#ef4444' : '#f59e0b'}; margin-bottom: 12px;">
+                <div class="card-header-padded" style="padding: 16px 24px; display: flex; align-items: center; gap: 16px;">
+                    <div style="font-size: 20px;">${alert.type === 'Low Stock' ? '📦' : alert.type === 'Late Shipment' ? '🚚' : '⚠️'}</div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">${alert.type}</h4>
+                        <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">${alert.message}</p>
+                    </div>
+                    <span class="badge" style="background: ${alert.severity === 'High' ? '#fee2e2' : '#fef3c7'}; color: ${alert.severity === 'High' ? '#b91c1c' : '#b45309'}">
+                        ${alert.severity} Priority
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) { handleFetchError(e, "fetch alerts"); }
+}
+
+/* ---------------- CHART UTILS ---------------- */
 
 function fetchAndRenderChart(urlKey, chartId, initFn, options) {
     fetchWithAuth(API_URLS[urlKey])
@@ -179,32 +243,26 @@ function initializeBarChart(id, data, opt) {
     });
 }
 
-/* ---------------- FIXED BUSINESS ANALYSIS LOGIC ---------------- */
-/* This replaces the old event listener with the function your HTML expects */
+/* ---------------- BUSINESS ANALYSIS LOGIC ---------------- */
 
 async function generateAnalysis() {
     const generateBtn = document.getElementById('generate-btn');
-    
-    // 1. Correctly get values using IDs that match your HTML
     const industry = document.getElementById('industry').value;
-    const marketDemand = document.getElementById('market_demand') ? document.getElementById('market_demand').value : document.getElementById('marketDemand').value; // Handle both ID possibilities safely
+    const marketDemand = document.getElementById('market_demand').value;
     const competition = document.getElementById('competition').value;
-    const capitalRange = document.getElementById('capital_range') ? document.getElementById('capital_range').value : document.getElementById('capitalRange').value;
+    const capitalRange = document.getElementById('capital_range').value;
     const experience = document.getElementById('experience').value;
-    const ideaText = document.getElementById('business_idea') ? document.getElementById('business_idea').value : document.getElementById('businessIdeaText').value;
+    const ideaText = document.getElementById('business_idea').value;
 
-    // 2. Validate
     if (!ideaText) {
         alert("Please describe the business idea.");
         return;
     }
 
-    // 3. UI Loading State
     const originalText = generateBtn.innerText;
     generateBtn.innerText = "Analyzing...";
     generateBtn.disabled = true;
 
-    // 4. Construct Payload for Backend
     const payload = {
         industry: industry,
         market_demand: parseInt(marketDemand) || 0,
@@ -215,7 +273,6 @@ async function generateAnalysis() {
     };
 
     try {
-        // 5. Send Request to FastAPI Backend
         const response = await fetchWithAuth(API_URLS.businessViability, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -229,61 +286,53 @@ async function generateAnalysis() {
         }
 
         const data = await response.json();
-
-        // 6. Update UI
-        await displayResults(data, ideaText);
+        displayResults(data, ideaText);
 
     } catch (error) {
         console.error("Error:", error);
-        alert("Could not connect to AI backend. Ensure main.py is running!");
+        alert("Could not connect to AI backend.");
     } finally {
         generateBtn.innerText = originalText;
         generateBtn.disabled = false;
     }
 }
 
-// Helper to update the Results UI
-async function displayResults(data, ideaName) {
+function displayResults(data, ideaName) {
     showSection('business-analysis-results');
 
     document.getElementById('ideaName').innerText = ideaName.length > 30 ? ideaName.substring(0, 30) + "..." : ideaName;
     document.getElementById('score-display').innerText = data.viability_score + "/100";
     document.getElementById('recommendation-text').innerText = data.breakdown || "Analysis Complete";
-    
-    // Only access projections if they exist
+
     if (data.projections) {
         document.getElementById('investment-est').innerText = data.projections.estimated_cost;
-        document.getElementById('analysisTimeline').innerText = "12-18 Months"; 
+        document.getElementById('analysisTimeline').innerText = "12-18 Months";
     }
 
-    // Risk Badge Color Logic
     const riskBadge = document.getElementById('risk-badge');
     if (riskBadge) {
         riskBadge.innerText = data.risk_level;
         riskBadge.style.color = '#fff';
         riskBadge.style.padding = '4px 8px';
         riskBadge.style.borderRadius = '4px';
-        
+
         if (data.risk_level === 'High') riskBadge.style.backgroundColor = '#dc3545';
         else if (data.risk_level === 'Medium') riskBadge.style.backgroundColor = '#ffc107';
         else riskBadge.style.backgroundColor = '#28a745';
     }
 
-    await updateAnalysisCharts(data);
+    updateAnalysisCharts(data);
 }
 
-// Helper to Update Charts
 let viabilityChartInstance = null;
 let marketChartInstance = null;
 
-async function updateAnalysisCharts(data) {
+function updateAnalysisCharts(data) {
     const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
 
-    // Use model-based projections first; no sales DB dependency
     let revLabels = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
-    let revData = (data.projections && data.projections.revenue_curve) ? data.projections.revenue_curve : [0,0,0,0,0];
+    let revData = (data.projections && data.projections.revenue_curve) ? data.projections.revenue_curve : [0, 0, 0, 0, 0];
 
-    // Revenue Chart
     const ctx1 = document.getElementById('viabilityChart')?.getContext('2d');
     if (ctx1) {
         if (viabilityChartInstance) viabilityChartInstance.destroy();
@@ -314,7 +363,6 @@ async function updateAnalysisCharts(data) {
         return 9;
     })();
 
-    // Radar Chart
     const ctx2 = document.getElementById('marketChart')?.getContext('2d');
     if (ctx2) {
         if (marketChartInstance) marketChartInstance.destroy();
@@ -324,13 +372,7 @@ async function updateAnalysisCharts(data) {
                 labels: ['Demand', 'Competition', 'Innovation', 'Scalability', 'Risk'],
                 datasets: [{
                     label: 'Market Fit',
-                    data: [
-                        demandScore,
-                        competitionScore,
-                        innovationScore,
-                        scalabilityScore,
-                        riskScore
-                    ],
+                    data: [demandScore, competitionScore, innovationScore, scalabilityScore, riskScore],
                     backgroundColor: 'rgba(16, 185, 129, 0.2)',
                     borderColor: '#10b981'
                 }]
@@ -355,55 +397,39 @@ function setupAIChat() {
 
     const openPanel = () => {
         panel.classList.remove('hidden');
-        toggleBtn.setAttribute('aria-expanded', 'true');
-        panel.setAttribute('aria-hidden', 'false');
         input.focus();
     };
 
     const closePanel = () => {
         panel.classList.add('hidden');
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        panel.setAttribute('aria-hidden', 'true');
     };
 
-    toggleBtn.setAttribute('aria-expanded', 'false');
-    panel.setAttribute('aria-hidden', 'true');
-
-    toggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (panel.classList.contains('hidden')) openPanel();
         else closePanel();
     });
 
-    if (closeBtn) closeBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
+    if (closeBtn) closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         closePanel();
     });
 
-    if (header) header.addEventListener('click', (event) => {
-        if (event.target === closeBtn) return;
+    if (header) header.addEventListener('click', (e) => {
+        if (e.target === closeBtn) return;
         closePanel();
     });
 
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', (e) => {
         if (panel.classList.contains('hidden')) return;
-        if (panel.contains(event.target) || toggleBtn.contains(event.target)) return;
+        if (panel.contains(e.target) || toggleBtn.contains(e.target)) return;
         closePanel();
     });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !panel.classList.contains('hidden')) {
-            closePanel();
-        }
-    });
-
-    sendBtn.addEventListener('click', () => {
-        sendAIMessage(input, messages);
-    });
-
-    input.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
+    sendBtn.addEventListener('click', () => sendAIMessage(input, messages));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
             sendAIMessage(input, messages);
         }
     });
@@ -432,14 +458,12 @@ function appendChatBubble(messages, role, text, highlight) {
 function appendTypingBubble(messages) {
     const bubble = document.createElement('div');
     bubble.className = 'ai-chat-bubble ai-chat-bubble-bot ai-chat-typing';
-
     const dots = document.createElement('div');
     dots.className = 'ai-chat-dots';
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 3; i++) {
         const dot = document.createElement('span');
         dots.appendChild(dot);
     }
-
     bubble.appendChild(dots);
     messages.appendChild(bubble);
     messages.scrollTop = messages.scrollHeight;
@@ -474,26 +498,27 @@ async function sendAIMessage(input, messages) {
     }
 }
 
-/* ---------------- INIT (Preserved) ---------------- */
-
-document.addEventListener('DOMContentLoaded', () => {
-    showSection('executive', { preventDefault() {} });
-    setInterval(() => loadDataForSection('executive'), 15000);
-    setupAIChat();
-});
-/* ---------------- UPLOAD LOGIC (Add this to script.js) ---------------- */
+/* ---------------- CSV UPLOAD ---------------- */
 
 async function uploadCSV() {
     const fileInput = document.getElementById('csvFile');
+    const replaceCheckbox = document.getElementById('replaceData');
     const file = fileInput.files[0];
 
-    // 1. Safety Check: Did they select a file?
     if (!file) {
         alert("Please select a CSV file first.");
         return;
     }
 
-    // 2. Prepare the Upload
+    const mode = replaceCheckbox && replaceCheckbox.checked ? "replace" : "upsert";
+
+    // Warning for replacement
+    if (mode === "replace") {
+        if (!confirm("⚠️ WARNING: This will DELETE all existing sales records before uploading. Continue?")) {
+            return;
+        }
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -504,9 +529,7 @@ async function uploadCSV() {
     }
 
     try {
-        // 3. Send to Backend
-        // Note: Matches the Python @router.post("/csv") inside prefix="/upload"
-        const response = await fetchWithAuth('/upload/csv', { 
+        const response = await fetchWithAuth(`/upload/csv?mode=${mode}`, {
             method: 'POST',
             body: formData
         });
@@ -517,27 +540,29 @@ async function uploadCSV() {
         }
 
         const result = await response.json();
-        
-        // 4. Success Message
-        alert("✅ Success! " + result.message);
-
-        // 5. THE FIX: Reload page to show new data
+        alert("✅ " + result.message);
         window.location.reload();
 
     } catch (error) {
         console.error("Upload Error:", error);
         alert("❌ Error: " + error.message);
     } finally {
-        // Reset Button
         if (uploadBtn) {
-            uploadBtn.innerText = "Upload Data";
+            uploadBtn.innerText = "Upload & Refresh";
             uploadBtn.disabled = false;
         }
-        // Clear input so they can upload again if needed
         fileInput.value = "";
     }
 }
 
+/* ---------------- INIT ---------------- */
 
-
-
+document.addEventListener('DOMContentLoaded', () => {
+    showSection('executive');
+    setInterval(() => {
+        const activeSection = Array.from(document.querySelectorAll('.dashboard-section'))
+            .find(s => !s.classList.contains('hidden'))?.id.replace('-section', '');
+        if (activeSection === 'executive') loadDataForSection('executive');
+    }, 30000);
+    setupAIChat();
+});

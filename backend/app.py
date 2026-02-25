@@ -1,17 +1,25 @@
 ﻿import os
 import re
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
-from backend.settings import settings
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from backend.limiter import limiter
 
 # 1. Imports
 from backend.routes.auth_routes import router as auth_router
 from backend.routes import main_routes, sales_routes, upload_routes
 from backend.routes import team_routes, ai_routes
+from backend.routes.google_auth_routes import router as google_auth_router
+from backend.routes import forecasting_routes, alert_routes
+load_dotenv()
+
+
 
 # Business idea validation keywords
 _BUSINESS_KEYWORDS = {
@@ -36,6 +44,15 @@ def _validate_business_text(text: str) -> str:
 
 # 2. CREATE THE APP
 app = FastAPI()
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please slow down and try again later.", "error": "Rate limit exceeded"}
+    )
 
 # 3. ATTACH ROUTERS
 app.include_router(auth_router)
@@ -44,6 +61,9 @@ app.include_router(sales_routes.router)
 app.include_router(upload_routes.router)
 app.include_router(team_routes.router)
 app.include_router(ai_routes.router)
+app.include_router(google_auth_router)
+app.include_router(forecasting_routes.router)
+app.include_router(alert_routes.router)
 
 # --- ML LOGIC IMPORT ---
 try:
@@ -58,6 +78,10 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
+from slowapi.middleware import SlowAPIMiddleware
+
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
