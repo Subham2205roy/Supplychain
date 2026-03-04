@@ -15,8 +15,10 @@ from backend.limiter import limiter
 from backend.routes.auth_routes import router as auth_router
 from backend.routes import main_routes, sales_routes, upload_routes
 from backend.routes import team_routes, ai_routes
+from backend.routes import inventory_routes
+from backend.routes import supplier_routes, customer_routes
 from backend.routes.google_auth_routes import router as google_auth_router
-from backend.routes import forecasting_routes, alert_routes
+from backend.routes import forecasting_routes, alert_routes, automation_routes, finance_routes, logistics_routes, activity_routes
 load_dotenv()
 
 
@@ -61,9 +63,16 @@ app.include_router(sales_routes.router)
 app.include_router(upload_routes.router)
 app.include_router(team_routes.router)
 app.include_router(ai_routes.router)
+app.include_router(inventory_routes.router)
+app.include_router(supplier_routes.router)
+app.include_router(customer_routes.router)
 app.include_router(google_auth_router)
 app.include_router(forecasting_routes.router)
 app.include_router(alert_routes.router)
+app.include_router(automation_routes.router)
+app.include_router(finance_routes.router)
+app.include_router(logistics_routes.router)
+app.include_router(activity_routes.router)
 
 # --- ML LOGIC IMPORT ---
 try:

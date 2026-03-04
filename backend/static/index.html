@@ -7,6 +7,8 @@
     <title>Global Business Intelligence Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
 </head>
 
 <body>
@@ -15,7 +17,13 @@
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <div class="logo-icon">📊</div>
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"></path>
+                            <path d="m19 9-5 5-4-4-3 3"></path>
+                        </svg>
+                    </div>
                     <div class="logo-text">
                         <h2>GlobalBI</h2>
                         <p>Business Intelligence</p>
@@ -26,25 +34,184 @@
                 <div class="nav-section">
                     <div class="nav-label">Dashboards</div>
                     <a href="#" class="nav-item active" onclick="showSection('executive', event)">
-                        <span class="nav-icon">📈</span> Executive Overview
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m3 3 7.63 7.63a2 2 0 0 0 2.83 0L21 3"></path>
+                                <path d="M21 3.5V9"></path>
+                                <path d="M19 15.5V21"></path>
+                                <path d="M15 11v10"></path>
+                                <path d="M11 15.5V21"></path>
+                                <path d="M7 11V21"></path>
+                                <path d="M3 15.5V21"></path>
+                            </svg>
+                        </span> Executive Overview
                     </a>
                     <a href="#" class="nav-item" onclick="showSection('sales', event)">
-                        <span class="nav-icon">💰</span> Sales Data
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </span> Sales Data
                     </a>
                     <a href="#" class="nav-item" onclick="showSection('comparison', event)">
-                        <span class="nav-icon">🌍</span> Country Comparison
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path
+                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                                </path>
+                            </svg>
+                        </span> Country Comparison
                     </a>
                     <a href="#" class="nav-item" onclick="showSection('reports', event)">
-                        <span class="nav-icon">📄</span> Reports
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </span> Reports
                     </a>
                     <a href="#" class="nav-item" onclick="showSection('inventory', event)">
-                        <span class="nav-icon">📦</span> Inventory & Alerts
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z">
+                                </path>
+                                <path d="m3.3 7 8.7 5 8.7-5"></path>
+                                <path d="M12 22V12"></path>
+                            </svg>
+                        </span> Inventory & Alerts
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('business-analysis-form', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 8V4H8"></path>
+                                <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                                <path d="M2 14h2"></path>
+                                <path d="M20 14h2"></path>
+                                <path d="M15 13v2"></path>
+                                <path d="M9 13v2"></path>
+                            </svg>
+                        </span> AI Analysis
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('automation', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </span> Email Automation
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Finance & Operations</div>
+                    <a href="#" class="nav-item" onclick="showSection('finance', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </span> Finance
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('logistics', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="1" y="3" width="15" height="13"></rect>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                            </svg>
+                        </span> Logistics
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-label">Business & Partners</div>
+                    <a href="#" class="nav-item" onclick="showSection('suppliers', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z">
+                                </path>
+                                <path d="M17 18h1"></path>
+                                <path d="M12 18h1"></path>
+                                <path d="M7 18h1"></path>
+                            </svg>
+                        </span> Suppliers
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('customers', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span> Customers
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('team', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path x="16" y="3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span> Team Management
                     </a>
                 </div>
             </div>
         </nav>
 
         <main class="main-content">
+            <header class="top-header">
+                <div class="header-search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" placeholder="Search orders, invoices, or shipments...">
+                </div>
+                <div class="header-actions">
+                    <div class="notification-wrapper">
+                        <button class="icon-btn" id="notificationBtn" onclick="toggleNotifications()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span class="notification-badge hidden" id="notificationCount">0</span>
+                        </button>
+                        <div class="notification-panel hidden" id="notificationPanel">
+                            <div class="panel-header">
+                                <h3>Notifications</h3>
+                                <button class="text-btn" onclick="markAllNotificationsAsRead()">Mark all as
+                                    read</button>
+                            </div>
+                            <div class="panel-content" id="notificationList">
+                                <p class="empty-msg">No new notifications</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
             <div id="error-banner" class="card hidden"
                 style="background-color: #fee2e2; border-color: #ef4444; margin-bottom: 24px;">
@@ -160,6 +327,40 @@
                     </div>
                 </div>
                 <div class="card">
+                    <div class="card-header border-b">
+                        <div class="flex items-center justify-between" style="width: 100%;">
+                            <h3 class="card-title">Order History</h3>
+                            <div class="page-actions">
+                                <button class="btn btn-primary btn-sm" onclick="openCreateOrderModal()">New
+                                    Order</button>
+                                <button class="btn btn-outline btn-sm" onclick="exportOrders()">Export</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+                                    <th>Order ID</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Country</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
                     <div class="card-header">
                         <h3 class="card-title">Monthly Sales Revenue</h3>
                         <p class="card-description">Total revenue generated per month</p>
@@ -177,6 +378,37 @@
                         <p>See where your revenue actually lands</p>
                     </div>
                 </div>
+                <div id="globeWrapper"
+                    style="margin-bottom: 40px; position: relative; width: 100%; height: 600px; display: flex; align-items: center; justify-content: center; overflow: visible; background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05) 0%, transparent 70%); border-radius: 40px;">
+                    <div id="globeContainer" style="width: 100%; height: 100%; cursor: grab;"></div>
+
+                    <div style="position: absolute; top: 0; left: 0; padding: 20px; pointer-events: none;">
+                        <h3 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">Live Global
+                            Revenue Distribution</h3>
+                        <p style="color: #64748b; font-size: 14px;">3D interactive visualization of sales across
+                            authorized regions</p>
+                    </div>
+
+                    <div id="globe-overlay"
+                        style="position: absolute; bottom: 24px; right: 24px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); color: #1e293b; padding: 16px; border-radius: 14px; font-size: 11px; pointer-events: none; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                        <div
+                            style="font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">
+                            Live Coverage Metrics</div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                            <div
+                                style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;">
+                            </div>
+                            <span style="font-weight: 600;">Optimal Revenue</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div
+                                style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6;">
+                            </div>
+                            <span style="font-weight: 600;">Active Market</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header-padded">
                         <h3 class="card-title">Revenue by Country</h3>
@@ -218,7 +450,7 @@
                                         <th style="padding: 12px;">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="inventory-table-body">
+                                <tbody id="inventoryManageBody">
                                     <tr>
                                         <td colspan="6" style="padding: 24px; text-align: center; color: #64748b;">
                                             Loading inventory data...</td>
@@ -240,7 +472,7 @@
 
                 <div class="card" style="border: 2px dashed #3b82f6; background: rgba(59, 130, 246, 0.05);">
                     <div class="card-header-padded">
-                        <h3 class="card-title">💡 Business Idea Analysis</h3>
+                        <h3 class="card-title">Business Idea Analysis</h3>
                         <p class="card-description">Get AI-powered analysis including risk, supply chain insights, and
                             financial projections.</p>
                         <button class="btn btn-primary" style="width: 100%; margin-top:1rem;"
@@ -251,7 +483,7 @@
                 <div class="card"
                     style="margin-top: 24px; border: 2px dashed #10b981; background: rgba(16, 185, 129, 0.05);">
                     <div class="card-header-padded">
-                        <h3 class="card-title">📂 Update Sales Data</h3>
+                        <h3 class="card-title">Update Sales Data</h3>
                         <p class="card-description">Upload a new CSV file to refresh the dashboard charts and KPIs.</p>
 
                         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
@@ -279,7 +511,7 @@
             <div id="business-analysis-form-section" class="dashboard-section hidden">
                 <div class="page-header">
                     <div class="page-title">
-                        <h1>💡 Business Idea Analysis</h1>
+                        <h1>Business Idea Analysis</h1>
                         <p>Describe your concept for comprehensive AI-powered insights.</p>
                     </div>
                 </div>
@@ -337,7 +569,7 @@
 
                             <button type="button" id="generate-btn" class="btn btn-primary"
                                 style="width:100%; margin-top:20px;" onclick="generateAnalysis()">
-                                ✨ Generate AI Analysis
+                                Generate AI Analysis
                             </button>
                         </form>
                     </div>
@@ -401,6 +633,337 @@
                 </div>
             </div>
 
+            <!-- SUPPLIERS SECTION -->
+            <div id="suppliers-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Suppliers</h1>
+                        <p>Manage raw material providers and reliability metrics</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-outline" onclick="exportSuppliers()">Export CSV</button>
+                        <button class="btn btn-primary" onclick="openAddSupplierModal()">Add Supplier</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header border-b">
+                        <div class="flex items-center justify-between" style="width: 100%;">
+                            <h3 class="card-title">All Suppliers</h3>
+                            <div class="search-wrap">
+                                <input type="text" id="supplierSearch" placeholder="Search suppliers..."
+                                    class="form-input" style="width: 250px; margin: 0;"
+                                    oninput="debounceSupplierSearch()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Lead Time (Days)</th>
+                                    <th>Reliability</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suppliersTableBody">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOMERS SECTION -->
+            <div id="customers-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Customers</h1>
+                        <p>Customer segments and account management</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-outline" onclick="exportCustomers()">Export CSV</button>
+                        <button class="btn btn-primary" onclick="openAddCustomerModal()">Add Customer</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header border-b">
+                        <div class="flex items-center justify-between" style="width: 100%;">
+                            <h3 class="card-title">Customer Portfolio</h3>
+                            <div class="filters flex gap-2">
+                                <input type="text" id="customerSearch" placeholder="Search customers..."
+                                    class="form-input" style="width: 200px; margin: 0;"
+                                    oninput="debounceCustomerSearch()">
+                                <select id="customerSegmentFilter" class="form-input" style="width: 180px; margin: 0;"
+                                    onchange="loadCustomers()">
+                                    <option value="">All Segments</option>
+                                    <option value="Enterprise">Enterprise</option>
+                                    <option value="SME">SME</option>
+                                    <option value="Direct">Direct</option>
+                                    <option value="Partner">Partner</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Segment</th>
+                                    <th>Total Revenue</th>
+                                    <th>Country</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUTOMATION SECTION -->
+            <div id="automation-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Email Automation</h1>
+                        <p>Authorize external senders to automatically upload CSV data via email</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="openAddAutomationModal()">Setup New Automation</button>
+                    </div>
+                </div>
+
+                <div class="card"
+                    style="margin-bottom: 24px; border: 2px solid #3b82f6; background: #eff6ff; border-radius: 12px; overflow: hidden;">
+                    <div
+                        style="background: #3b82f6; color: white; padding: 12px 20px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                        </svg>
+                        How to use Automation
+                    </div>
+                    <div class="card-header-padded" style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div
+                                    style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    1</div>
+                                <p style="font-size: 0.9rem; color: #1e3a8a;">Authorize a sender below (e.g., your
+                                    vendor's email).</p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div
+                                    style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    2</div>
+                                <p style="font-size: 0.9rem; color: #1e3a8a;">They send CSVs to:<br><strong
+                                        style="color: #1d4ed8; word-break: break-all;">my.supplychain.app@gmail.com</strong>
+                                </p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div
+                                    style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+                                    3</div>
+                                <p style="font-size: 0.9rem; color: #1e3a8a;">The system automatically updates your
+                                    charts!</p>
+                            </div>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 0.85rem; color: #64748b; font-style: italic;">Note: We
+                            send a verification code and final instructions to the sender automatically during setup.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header border-b">
+                        <h3 class="card-title">Active Automations</h3>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Sender Email</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Expires At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="automationTableBody">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM SECTION -->
+            <div id="team-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Team Management</h1>
+                        <p>Control access and manage organization members</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="openInviteModal()">Invite Member</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2">
+                    <div class="card">
+                        <div class="card-header border-b">
+                            <h3 class="card-title">Active Members</h3>
+                        </div>
+                        <div class="card-content" style="padding: 0;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teamMembersBody">
+                                    <!-- Data injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header border-b">
+                            <h3 class="card-title">Pending Invitations</h3>
+                        </div>
+                        <div class="card-content" style="padding: 0;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Sent</th>
+                                        <th>Expires</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingInvitesBody">
+                                    <!-- Data injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINANCE SECTION -->
+            <div id="finance-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Financial Management</h1>
+                        <p>Track invoices, payments, and cash flow</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header-padded">
+                        <h3 class="card-title">All Invoices</h3>
+                    </div>
+                    <div class="table-container">
+                        <table id="invoicesTable">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Invoices will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Finance Activity Log -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header border-b">
+                        <h3 class="card-title">Recent Activity</h3>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table" id="financeLogsTable">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Entity</th>
+                                    <th>Details</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGISTICS SECTION -->
+            <div id="logistics-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Logistics & Shipping</h1>
+                        <p>Manage shipments, tracking, and returns</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="card">
+                        <div class="card-header-padded">
+                            <h3 class="card-title">Active Shipments</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="shipmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tracking #</th>
+                                        <th>Order ID</th>
+                                        <th>Carrier</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Shipments will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header-padded">
+                            <h3 class="card-title">Customer Returns</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="returnsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Returns will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -426,6 +989,412 @@
     </div>
 
     <script src="/static/script.js"></script>
+
+    <!-- Phase 2 Modals -->
+    <!-- Add Supplier Modal -->
+    <div id="addSupplierModal" class="modal">
+        <div class="modal-content card">
+            <div class="card-header border-b">
+                <h3 class="card-title">Add New Supplier</h3>
+                <button class="close-btn" onclick="closeModal('addSupplierModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form id="addSupplierForm" onsubmit="event.preventDefault(); submitAddSupplier();">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" id="supName" class="form-input" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="supContact" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="supEmail" class="form-input">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="supPhone" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Country</label>
+                            <input type="text" id="supCountry" class="form-input">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Lead Time (Days)</label>
+                            <input type="number" id="supLeadTime" class="form-input" value="7">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Reliability (0-10)</label>
+                            <input type="number" id="supReliability" class="form-input" min="0" max="10" value="5"
+                                step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="supNotes" class="form-input" style="min-height: 80px;"></textarea>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('addSupplierModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Supplier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Supplier Modal -->
+    <div id="editSupplierModal" class="modal">
+        <div class="modal-content card">
+            <div class="card-header border-b">
+                <h3 class="card-title">Edit Supplier</h3>
+                <button class="close-btn" onclick="closeModal('editSupplierModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form id="editSupplierForm" onsubmit="event.preventDefault(); submitEditSupplier();">
+                    <input type="hidden" id="editSupId">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" id="editSupName" class="form-input" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="editSupContact" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="editSupEmail" class="form-input">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="editSupPhone" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Country</label>
+                            <input type="text" id="editSupCountry" class="form-input">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Lead Time (Days)</label>
+                            <input type="number" id="editSupLeadTime" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Reliability (0-10)</label>
+                            <input type="number" id="editSupReliability" class="form-input" min="0" max="10" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="editSupNotes" class="form-input" style="min-height: 80px;"></textarea>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('editSupplierModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Supplier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div id="addCustomerModal" class="modal">
+        <div class="modal-content card">
+            <div class="card-header border-b">
+                <h3 class="card-title">Add New Customer</h3>
+                <button class="close-btn" onclick="closeModal('addCustomerModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form id="addCustomerForm" onsubmit="event.preventDefault(); submitAddCustomer();">
+                    <div class="form-group">
+                        <label class="form-label">Customer/Company Name</label>
+                        <input type="text" id="custName" class="form-input" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="custEmail" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="custPhone" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Segment</label>
+                        <select id="custSegment" class="form-input">
+                            <option value="Regular">Regular</option>
+                            <option value="SME">SME</option>
+                            <option value="Enterprise">Enterprise</option>
+                            <option value="VIP">VIP</option>
+                            <option value="Partner">Partner</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" id="custAddress" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="custNotes" class="form-input" style="min-height: 80px;"></textarea>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('addCustomerModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Automation Modals -->
+    <div id="addAutomationModal" class="modal">
+        <div class="modal-content card">
+            <div class="card-header border-b">
+                <h3 class="card-title">Setup Email Automation</h3>
+                <button class="close-btn" onclick="closeModal('addAutomationModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <div id="automation-step-1">
+                    <p class="card-description" style="margin-bottom: 20px;">Enter the email address that will be
+                        sending the CSV files. We will send a verification code to that address.</p>
+                    <form id="requestOtpForm" onsubmit="event.preventDefault(); submitRequestOTP();">
+                        <div class="form-group">
+                            <label class="form-label">Authorized Sender Email</label>
+                            <input type="email" id="autoSenderEmail" class="form-input" placeholder="vendor@example.com"
+                                required>
+                        </div>
+                        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="button" class="btn btn-outline"
+                                onclick="closeModal('addAutomationModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Send Verification Code</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="automation-step-2" class="hidden">
+                    <p class="card-description" style="margin-bottom: 20px;">A 6-digit code was "sent" to the email.
+                        Enter it below along with the authorized duration.</p>
+                    <form id="verifyOtpForm" onsubmit="event.preventDefault(); submitVerifyOTP();">
+                        <div class="form-group">
+                            <label class="form-label">Verification Code</label>
+                            <input type="text" id="autoOtpCode" class="form-input" placeholder="000000" required
+                                maxlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Authorization Duration</label>
+                            <select id="autoDuration" class="form-input">
+                                <option value="7">1 Week</option>
+                                <option value="14">2 Weeks</option>
+                                <option value="21">3 Weeks</option>
+                                <option value="30" selected>1 Month</option>
+                                <option value="90">3 Months</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="button" class="btn btn-outline" onclick="resetAutomationModal()">Back</button>
+                            <button type="submit" class="btn btn-primary">Verify & Activate</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div id="editCustomerModal" class="modal">
+        <div class="modal-content card">
+            <div class="card-header border-b">
+                <h3 class="card-title">Edit Customer</h3>
+                <button class="close-btn" onclick="closeModal('editCustomerModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form id="editCustomerForm" onsubmit="event.preventDefault(); submitEditCustomer();">
+                    <input type="hidden" id="editCustId">
+                    <div class="form-group">
+                        <label class="form-label">Customer Name</label>
+                        <input type="text" id="editCustName" class="form-input" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="editCustEmail" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="editCustPhone" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Segment</label>
+                        <select id="editCustSegment" class="form-input">
+                            <option value="Regular">Regular</option>
+                            <option value="SME">SME</option>
+                            <option value="Enterprise">Enterprise</option>
+                            <option value="VIP">VIP</option>
+                            <option value="Partner">Partner</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" id="editCustAddress" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="editCustNotes" class="form-input" style="min-height: 80px;"></textarea>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('editCustomerModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Modals -->
+    <div id="inviteModal" class="modal">
+        <div class="modal-content card" style="max-width: 400px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Invite Team Member</h3>
+                <button class="close-btn" onclick="closeModal('inviteModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form id="inviteTeamForm" onsubmit="event.preventDefault(); sendTeamInvite();">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="inviteEmail" class="form-input" placeholder="teammate@company.com"
+                            required>
+                    </div>
+                    <div style="margin-top: 8px; color: #64748b; font-size: 12px;">
+                        New members will receive an invite to join your organization.
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Send
+                        Invitation</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Modals -->
+    <div id="addInventoryModal" class="modal">
+        <div class="modal-content card" style="max-width: 500px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Add New Inventory Item</h3>
+                <button class="close-btn" onclick="closeModal('addInventoryModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form onsubmit="event.preventDefault(); submitAddInventory();">
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" id="invProductName" class="form-input" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Stock Level</label>
+                            <input type="number" id="invStockLevel" class="form-input" value="0">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Reorder Point</label>
+                            <input type="number" id="invReorderPoint" class="form-input" value="10">
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('addInventoryModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editInventoryModal" class="modal">
+        <div class="modal-content card" style="max-width: 500px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Edit Inventory Item</h3>
+                <button class="close-btn" onclick="closeModal('editInventoryModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form onsubmit="event.preventDefault(); submitEditInventory();">
+                    <input type="hidden" id="editInvId">
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" id="editInvProductName" class="form-input" disabled>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Stock Level</label>
+                            <input type="number" id="editInvStockLevel" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Reorder Point</label>
+                            <input type="number" id="editInvReorderPoint" class="form-input">
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('editInventoryModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="adjustStockModal" class="modal">
+        <div class="modal-content card" style="max-width: 450px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Adjust Stock Level</h3>
+                <button class="close-btn" onclick="closeModal('adjustStockModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form onsubmit="event.preventDefault(); submitStockAdjustment();">
+                    <input type="hidden" id="adjustInvId">
+                    <div
+                        style="margin-bottom: 20px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Adjusting for:</p>
+                        <p id="adjustProductName" style="font-weight: 700; color: #1e293b; font-size: 16px;"></p>
+                        <p style="font-size: 13px; color: #64748b; margin-top: 8px;">Current Stock: <span
+                                id="adjustCurrentStock" style="font-weight: 600; color: #3b82f6;"></span></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Adjustment Amount</label>
+                        <input type="number" id="adjustAmount" class="form-input" placeholder="e.g. 50 or -20" required>
+                        <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Use positive numbers to add,
+                            negative to remove stock.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reason for Adjustment</label>
+                        <select id="adjustReason" class="form-input">
+                            <option value="Restock">Restock</option>
+                            <option value="Inventory Count">Inventory Count</option>
+                            <option value="Damaged Goods">Damaged Goods</option>
+                            <option value="Return">Customer Return</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="closeModal('adjustStockModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

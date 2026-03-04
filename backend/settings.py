@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     # Default to local sqlite, but can be overridden by DATABASE_URL env var
     database_url: str = f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'supplychain.db'))}"
 
+    # SMTP Settings
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = "my.supplychain.app@gmail.com"
+    smtp_password: str = "gqsq nnoa dtsw ruyx"
+
+    # Internal Service Authentication
+    internal_service_key: str = "supplychain_worker_secret_2024"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

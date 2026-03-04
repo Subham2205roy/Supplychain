@@ -83,3 +83,61 @@ def accept_team_invite(
     db.commit()
 
     return {"message": "Invite accepted.", "company_id": invite.company_id}
+
+
+@router.get("/members")
+def list_team_members(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.company_id:
+        raise HTTPException(status_code=400, detail="User has no company.")
+
+    members = (
+        db.query(User)
+        .filter(User.company_id == current_user.company_id)
+        .all()
+    )
+
+    company = db.query(Company).filter(Company.id == current_user.company_id).first()
+
+    return [
+        {
+            "id": m.id,
+            "username": m.username,
+            "email": m.email,
+            "role": "Owner" if company and company.owner_user_id == m.id else "Member",
+        }
+        for m in members
+    ]
+
+
+@router.get("/invites")
+def list_pending_invites(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.company_id:
+        raise HTTPException(status_code=400, detail="User has no company.")
+
+    company = db.query(Company).filter(Company.id == current_user.company_id).first()
+    if not company or company.owner_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the company owner can view invites.")
+
+    invites = (
+        db.query(TeamInvite)
+        .filter(TeamInvite.company_id == current_user.company_id, TeamInvite.status == "pending")
+        .order_by(TeamInvite.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": inv.id,
+            "invited_email": inv.invited_email,
+            "status": inv.status,
+            "created_at": str(inv.created_at) if inv.created_at else None,
+            "expires_at": str(inv.expires_at) if inv.expires_at else None,
+        }
+        for inv in invites
+    ]

@@ -5,6 +5,9 @@ from backend.models.sales_model import Sale
 from backend.routes.auth_routes import get_current_user
 from backend.models.user_model import User
 from dateutil import parser
+import io
+import csv
+import datetime
 
 router = APIRouter(
     prefix="/upload",
@@ -152,6 +155,46 @@ def upload_unified_csv(
         "task_id": task_id,
         "status": "processing"
     }
+
+from backend.settings import settings
+
+@router.post("/internal/csv")
+def upload_csv_internal(
+    background_tasks: BackgroundTasks,
+    user_id: int,
+    file: UploadFile = File(...),
+    internal_key: str = None,
+    db: Session = Depends(get_db)
+):
+    # Verify the internal service key
+    if internal_key != settings.internal_service_key:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid Service Key")
+
+    # Fetch user to get company_id
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file.")
+
+    task_id = f"internal_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{user_id}"
+    
+    try:
+        contents = file.file.read()
+        background_tasks.add_task(
+            process_csv_background, 
+            user.company_id, 
+            user.id, 
+            contents, 
+            "upsert", 
+            task_id
+        )
+        return {"message": "Internal upload accepted", "task_id": task_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        file.file.close()
 
 @router.get("/status/{task_id}")
 def get_upload_status(task_id: str):
