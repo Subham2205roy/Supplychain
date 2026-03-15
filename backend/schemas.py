@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 
 # ===========================
 # 🔐 AUTHENTICATION SCHEMAS
@@ -21,6 +21,10 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 class UserResponse(UserBase):
     id: int
@@ -79,7 +83,7 @@ class InventoryUpdate(BaseModel):
 class Inventory(InventoryBase):
     id: int
     company_id: int
-    last_updated: Optional[date] = None
+    last_updated: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -278,7 +282,7 @@ class Notification(NotificationBase):
     id: int
     user_id: int
     is_read: bool
-    created_at: date
+    created_at: datetime
 
     class Config:
         from_attributes = True

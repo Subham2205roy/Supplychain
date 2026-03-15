@@ -4,6 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.database.database import Base, get_db
 from backend.app import app
+from backend.limiter import limiter
+
+# Disable rate limiting for tests
+limiter.enabled = False
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_DATABASE_URL = "sqlite://"

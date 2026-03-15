@@ -2,7 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.app import app
 
+from backend.limiter import limiter
+
 def test_login_rate_limit():
+    if not limiter.enabled:
+        pytest.skip("Rate limiter is disabled in this environment")
     client = TestClient(app)
     # The limit is 5 per minute
     

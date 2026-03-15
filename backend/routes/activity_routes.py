@@ -41,11 +41,29 @@ def mark_notification_as_read(
     db.commit()
     return {"status": "success"}
 
-@router.get("/logs", response_model=List[schemas.ActivityLog])
-def get_activity_logs(
+@router.post("/notifications/read-all")
+def mark_all_notifications_as_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(ActivityLog).filter(
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True}, synchronize_session=False)
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/logs", response_model=List[schemas.ActivityLog])
+def get_activity_logs(
+    entity_type: str = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(ActivityLog).filter(
         ActivityLog.company_id == current_user.company_id
-    ).order_by(ActivityLog.created_at.desc()).limit(100).all()
+    )
+    
+    if entity_type:
+        query = query.filter(ActivityLog.entity_type == entity_type)
+        
+    return query.order_by(ActivityLog.created_at.desc()).limit(100).all()

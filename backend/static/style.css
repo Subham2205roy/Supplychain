@@ -924,6 +924,19 @@ body {
     font-weight: 600;
 }
 
+.status-pill.badge.badge-success { background: #dcfce7; color: #15803d; }
+.badge.badge-warning { background: #fef3c7; color: #b45309; }
+.badge.badge-error { background: #fee2e2; color: #b91c1c; }
+.badge.badge-info { background: #e0f2fe; color: #0369a1; }
+.badge.badge-outline { background: transparent; border: 1px solid #e2e8f0; color: #64748b; }
+
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-slate-500 { color: #64748b; }
+
+/* Dashboard Tables */
 .status-active {
     background: #dcfce7;
     color: #15803d;
@@ -950,8 +963,10 @@ body {
     height: 100%;
     background-color: rgba(15, 23, 42, 0.5);
     backdrop-filter: blur(4px);
-    align-items: center;
+    align-items: flex-start; /* Start from top to allow scrolling */
     justify-content: center;
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 24px 16px;
 }
 
 .modal.show {
@@ -960,9 +975,11 @@ body {
 
 .modal-content {
     width: 100%;
-    max-width: 500px;
+    max-width: 550px;
     position: relative;
     animation: modalSlide 0.3s ease-out;
+    margin-bottom: 24px; /* Space at bottom */
+    max-height: fit-content;
 }
 
 @keyframes modalSlide {
@@ -1038,3 +1055,58 @@ body {
     margin: 0;
     color: #64748b;
 }
+
+/* =========================================
+   7. TABS & COMPACT ALERTS
+   ========================================= */
+.tabs-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 2px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.alert-severity-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.severity-high { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.severity-medium { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+.severity-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }

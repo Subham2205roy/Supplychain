@@ -11,6 +11,7 @@ from backend.models.supplier_model import Supplier
 from backend.models.user_model import User
 from backend.routes.auth_routes import get_current_user
 from backend import schemas
+from backend.models.activity_model import Notification
 
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
@@ -26,6 +27,17 @@ def create_supplier(
         **payload.model_dump(),
     )
     db.add(supplier)
+    
+    # Create notification
+    notification = Notification(
+        user_id=current_user.id,
+        company_id=current_user.company_id,
+        title="New Supplier Added",
+        message=f"Supplier '{supplier.name}' has been added to your network.",
+        type="Info"
+    )
+    db.add(notification)
+    
     db.commit()
     db.refresh(supplier)
     return _to_dict(supplier)

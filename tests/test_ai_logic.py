@@ -1,5 +1,5 @@
 import pytest
-from backend.routes.ai_routes import detect_intent, tokenize
+from backend.routes.ai_routes import _detect_intent_keywords as detect_intent, tokenize
 
 def test_tokenize():
     norm, tokens = tokenize("What's the profit for 2024?")

@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/globe.gl"></script>
+    <script src="/static/config.js"></script>
 </head>
 
 <body>
@@ -177,18 +178,23 @@
                         </span> Team Management
                     </a>
                 </div>
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <a href="#" class="nav-item" onclick="showSection('settings', event)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </span> Settings
+                    </a>
+                </div>
             </div>
         </nav>
 
         <main class="main-content">
-            <header class="top-header">
-                <div class="header-search">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" placeholder="Search orders, invoices, or shipments...">
-                </div>
+            <header class="top-header" style="justify-content: flex-end;">
                 <div class="header-actions">
                     <div class="notification-wrapper">
                         <button class="icon-btn" id="notificationBtn" onclick="toggleNotifications()">
@@ -424,39 +430,76 @@
                 <div class="page-header">
                     <div class="page-title">
                         <h1>Inventory & Alerts</h1>
-                        <p>Real-time stock tracking and automated risk detection</p>
+                        <p>Track stock levels and supply chain risks</p>
                     </div>
                 </div>
 
-                <div id="alerts-container" class="grid grid-cols-1" style="margin-bottom: 32px;">
-                    <!-- Alerts will be injected here -->
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchInventoryTab('inventory-list')">Inventory List</button>
+                    <button class="tab-btn" onclick="switchInventoryTab('system-alerts')">System Alerts</button>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Stock Health & Forecasting</h3>
-                        <p class="card-description">Estimated days of cover based on recent sales velocity</p>
+                <!-- Tab 1: Inventory List -->
+                <div id="inventory-list-tab" class="tab-content">
+                    <div class="header-actions" style="margin-bottom: 24px;">
+                        <button class="btn btn-primary" onclick="openAddInventoryModal()">Add Item</button>
+                        <button class="btn btn-outline" onclick="exportInventory()">Export CSV</button>
                     </div>
-                    <div class="card-content">
-                        <div style="overflow-x: auto;">
-                            <table class="data-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
-                                <thead>
-                                    <tr style="text-align: left; border-bottom: 2px solid #f1f5f9;">
-                                        <th style="padding: 12px;">Product</th>
-                                        <th style="padding: 12px;">In Stock</th>
-                                        <th style="padding: 12px;">Daily Velocity</th>
-                                        <th style="padding: 12px;">Est. Days Left</th>
-                                        <th style="padding: 12px;">Stock-out Date</th>
-                                        <th style="padding: 12px;">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="inventoryManageBody">
-                                    <tr>
-                                        <td colspan="6" style="padding: 24px; text-align: center; color: #64748b;">
-                                            Loading inventory data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Stock Health & Status</h3>
+                            <p class="card-description">View current stock levels and update items</p>
+                        </div>
+                        <div class="card-content">
+                            <div style="overflow-x: auto;">
+                                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="text-align: left; border-bottom: 2px solid #f1f5f9;">
+                                            <th style="padding: 12px;">Product</th>
+                                            <th style="padding: 12px;">In Stock</th>
+                                            <th style="padding: 12px;">Reorder Point</th>
+                                            <th style="padding: 12px;">Last Updated</th>
+                                            <th style="padding: 12px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventoryManageBody">
+                                        <tr>
+                                            <td colspan="5" style="padding: 24px; text-align: center; color: #64748b;">
+                                                Loading inventory data...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: System Alerts -->
+                <div id="system-alerts-tab" class="tab-content hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Active System Alerts</h3>
+                            <p class="card-description">Critical notifications regarding stock and shipments</p>
+                        </div>
+                        <div class="card-content">
+                            <div style="overflow-x: auto;">
+                                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="text-align: left; border-bottom: 2px solid #f1f5f9;">
+                                            <th style="padding: 12px;">Type</th>
+                                            <th style="padding: 12px;">Message</th>
+                                            <th style="padding: 12px;">Priority</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="alerts-table-body">
+                                        <tr>
+                                            <td colspan="3" style="padding: 24px; text-align: center; color: #64748b;">
+                                                Loading alerts...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -650,11 +693,7 @@
                     <div class="card-header border-b">
                         <div class="flex items-center justify-between" style="width: 100%;">
                             <h3 class="card-title">All Suppliers</h3>
-                            <div class="search-wrap">
-                                <input type="text" id="supplierSearch" placeholder="Search suppliers..."
-                                    class="form-input" style="width: 250px; margin: 0;"
-                                    oninput="debounceSupplierSearch()">
-                            </div>
+
                         </div>
                     </div>
                     <div class="card-content" style="padding: 0;">
@@ -662,10 +701,11 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Lead Time (Days)</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th>Country</th>
+                                    <th>Lead Time</th>
                                     <th>Reliability</th>
-                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -695,9 +735,7 @@
                         <div class="flex items-center justify-between" style="width: 100%;">
                             <h3 class="card-title">Customer Portfolio</h3>
                             <div class="filters flex gap-2">
-                                <input type="text" id="customerSearch" placeholder="Search customers..."
-                                    class="form-input" style="width: 200px; margin: 0;"
-                                    oninput="debounceCustomerSearch()">
+
                                 <select id="customerSegmentFilter" class="form-input" style="width: 180px; margin: 0;"
                                     onchange="loadCustomers()">
                                     <option value="">All Segments</option>
@@ -714,10 +752,11 @@
                             <thead>
                                 <tr>
                                     <th>Customer Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
                                     <th>Segment</th>
+                                    <th>Orders</th>
                                     <th>Total Revenue</th>
-                                    <th>Country</th>
-                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -873,9 +912,10 @@
                 <div class="card">
                     <div class="card-header-padded">
                         <h3 class="card-title">All Invoices</h3>
+                        <p class="card-description">View and manage customer billing</p>
                     </div>
-                    <div class="table-container">
-                        <table id="invoicesTable">
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table" id="invoicesTable">
                             <thead>
                                 <tr>
                                     <th>Invoice #</th>
@@ -926,9 +966,10 @@
                     <div class="card">
                         <div class="card-header-padded">
                             <h3 class="card-title">Active Shipments</h3>
+                            <p class="card-description">Real-time transit tracking</p>
                         </div>
-                        <div class="table-container">
-                            <table id="shipmentsTable">
+                        <div class="card-content" style="padding: 0;">
+                            <table class="data-table" id="shipmentsTable">
                                 <thead>
                                     <tr>
                                         <th>Tracking #</th>
@@ -946,9 +987,10 @@
                     <div class="card">
                         <div class="card-header-padded">
                             <h3 class="card-title">Customer Returns</h3>
+                            <p class="card-description">Reverse logistics management</p>
                         </div>
-                        <div class="table-container">
-                            <table id="returnsTable">
+                        <div class="card-content" style="padding: 0;">
+                            <table class="data-table" id="returnsTable">
                                 <thead>
                                     <tr>
                                         <th>Order ID</th>
@@ -963,7 +1005,93 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Logistics Activity Log -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header border-b">
+                        <div class="flex items-center justify-between" style="width: 100%;">
+                            <h3 class="card-title">Logistics Activity</h3>
+                            <p class="card-description">Recent shipping and return events</p>
+                        </div>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table" id="logisticsLogsTable">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Entity</th>
+                                    <th>Details</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
+            <!-- SETTINGS SECTION -->
+            <div id="settings-section" class="dashboard-section hidden">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Settings</h1>
+                        <p>Manage your personal details and account preferences</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2" style="gap: 24px;">
+                    <!-- Profile Card -->
+                    <div class="card">
+                        <div class="card-header border-b">
+                            <h3 class="card-title">Profile Information</h3>
+                        </div>
+                        <div class="card-header-padded">
+                            <form id="settingsForm" onsubmit="event.preventDefault(); updateUserSettings();">
+                                <div class="form-group">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" id="settingsUsername" class="form-input" placeholder="Your username">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="settingsEmail" class="form-input" disabled
+                                        style="background: #f1f5f9; cursor: not-allowed;">
+                                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Email cannot be changed for security reasons.</p>
+                                </div>
+                                <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Account Info Card -->
+                    <div class="card">
+                        <div class="card-header border-b">
+                            <h3 class="card-title">Account Details</h3>
+                        </div>
+                        <div class="card-header-padded">
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                <div>
+                                    <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Account Type</p>
+                                    <p style="font-weight: 600; color: #1e293b;">Admin</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Security</p>
+                                    <p style="font-weight: 600; color: #1e293b;">JWT + HttpOnly Cookies</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Session</p>
+                                    <p style="font-weight: 600; color: #10b981;">● Active</p>
+                                </div>
+                            </div>
+                            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                <button class="btn btn-outline" style="width: 100%; color: #ef4444; border-color: #fca5a5;" onclick="window.location.href='/'">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -1041,8 +1169,8 @@
                     </div>
                     <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
                         <button type="button" class="btn btn-outline"
-                            onclick="closeModal('addSupplierModal')">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Supplier</button>
+                            onclick="closeModal('addSupplierModal')">Back</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </form>
             </div>
@@ -1390,6 +1518,36 @@
                         <button type="button" class="btn btn-outline"
                             onclick="closeModal('adjustStockModal')">Cancel</button>
                         <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="settings-section" class="dashboard-section hidden">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Settings</h1>
+                <p>Manage your personal profile and account preferences</p>
+            </div>
+        </div>
+
+        <div class="card" style="max-width: 600px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Personal Details</h3>
+            </div>
+            <div class="card-content">
+                <form id="settingsForm" onsubmit="event.preventDefault(); updateUserSettings();">
+                    <div class="form-group">
+                        <label class="form-label">Full Name / Username</label>
+                        <input type="text" id="settingsUsername" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="settingsEmail" class="form-input" required disabled>
+                        <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Email updates are currently disabled for security.</p>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>
             </div>

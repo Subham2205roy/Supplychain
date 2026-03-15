@@ -1,5 +1,0 @@
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install fastapi uvicorn pandas numpy scikit-learn
-python app.py

@@ -11,6 +11,7 @@ from backend.models.customer_model import Customer
 from backend.models.user_model import User
 from backend.routes.auth_routes import get_current_user
 from backend import schemas
+from backend.models.activity_model import Notification
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
@@ -26,6 +27,17 @@ def create_customer(
         **payload.model_dump(),
     )
     db.add(customer)
+    
+    # Create notification
+    notification = Notification(
+        user_id=current_user.id,
+        company_id=current_user.company_id,
+        title="New Customer Onboarded",
+        message=f"Customer '{customer.name}' has been added to your portfolio.",
+        type="Info"
+    )
+    db.add(notification)
+    
     db.commit()
     db.refresh(customer)
     return _to_dict(customer)

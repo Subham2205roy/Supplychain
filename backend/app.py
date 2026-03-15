@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
@@ -18,7 +18,7 @@ from backend.routes import team_routes, ai_routes
 from backend.routes import inventory_routes
 from backend.routes import supplier_routes, customer_routes
 from backend.routes.google_auth_routes import router as google_auth_router
-from backend.routes import forecasting_routes, alert_routes, automation_routes, finance_routes, logistics_routes, activity_routes
+from backend.routes import forecasting_routes, alert_routes, automation_routes, finance_routes, logistics_routes, activity_routes, user_routes
 load_dotenv()
 
 
@@ -73,6 +73,7 @@ app.include_router(automation_routes.router)
 app.include_router(finance_routes.router)
 app.include_router(logistics_routes.router)
 app.include_router(activity_routes.router)
+app.include_router(user_routes.router)
 
 # --- ML LOGIC IMPORT ---
 try:
@@ -87,6 +88,11 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
+
+# Add live frontend domain from environment variable if exists
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    ALLOWED_ORIGINS.append(frontend_url)
 from slowapi.middleware import SlowAPIMiddleware
 
 app.add_middleware(SlowAPIMiddleware)

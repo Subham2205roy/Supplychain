@@ -11,8 +11,10 @@ from backend.database.database import get_db
 from backend.models.inventory_model import Inventory
 from backend.models.sales_model import Sale
 from backend.models.user_model import User
+from backend.models.company_model import Company
 from backend.routes.auth_routes import get_current_user
 from backend import schemas
+from backend.models.activity_model import Notification
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -45,6 +47,17 @@ def create_inventory_item(
         reorder_point=item.reorder_point,
     )
     db.add(new_item)
+    
+    # Create notification
+    notification = Notification(
+        user_id=current_user.id,
+        company_id=current_user.company_id,
+        title="New Inventory Item",
+        message=f"Product '{new_item.product_name}' has been added to inventory.",
+        type="Info"
+    )
+    db.add(notification)
+    
     db.commit()
     db.refresh(new_item)
     return new_item
@@ -174,6 +187,18 @@ def adjust_stock(
         )
 
     item.stock_level = new_level
+    
+    # Check for low stock notification
+    if new_level <= item.reorder_point:
+        notification = Notification(
+            user_id=current_user.id,
+            company_id=current_user.company_id,
+            title="Low Stock Alert",
+            message=f"Stock for '{item.product_name}' is at or below reorder point ({new_level}).",
+            type="Warning"
+        )
+        db.add(notification)
+        
     db.commit()
     db.refresh(item)
 

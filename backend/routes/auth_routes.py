@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
@@ -141,8 +141,9 @@ def login(request: Request, user_credentials: UserLogin, response: Response, db:
         raise HTTPException(status_code=400, detail="Invalid Credentials")
 
     # 1. Check if account is locked
-    if user.lockout_until and user.lockout_until > datetime.utcnow():
-        wait_time = int((user.lockout_until - datetime.utcnow()).total_seconds() / 60)
+    now = datetime.utcnow()
+    if user.lockout_until and user.lockout_until > now:
+        wait_time = int((user.lockout_until - now).total_seconds() / 60)
         raise HTTPException(
             status_code=403, 
             detail=f"Account locked due to too many failed attempts. Try again in {wait_time + 1} minutes."
@@ -156,6 +157,7 @@ def login(request: Request, user_credentials: UserLogin, response: Response, db:
             user.lockout_until = datetime.utcnow() + timedelta(minutes=15)
         
         db.commit()
+        db.refresh(user)
         raise HTTPException(status_code=400, detail="Invalid Credentials")
 
     # 3. Success: Reset security fields

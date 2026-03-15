@@ -1,5 +1,7 @@
 // Configuration for API endpoints
-const API_BASE_URL = '/api';
+const API_SERVER_URL = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
+const API_BASE_URL = `${API_SERVER_URL}/api`;
+
 const API_URLS = {
     kpis: `${API_BASE_URL}/kpis`,
     profitTrend: `${API_BASE_URL}/profit-trend`,
@@ -10,21 +12,21 @@ const API_URLS = {
     ordersOverview: `${API_BASE_URL}/orders-overview`,
     successPrediction: `${API_BASE_URL}/success-prediction`,
     salesTrend: `${API_BASE_URL}/sales-trend`,
-    inventoryHealth: `/forecasting/inventory-health`,
-    activeAlerts: `/alerts/active`,
-    businessViability: `/ai/business-viability`,
+    inventoryHealth: `${API_SERVER_URL}/forecasting/inventory-health`,
+    activeAlerts: `${API_SERVER_URL}/alerts/active`,
+    businessViability: `${API_SERVER_URL}/ai/business-viability`,
     aiChat: `${API_BASE_URL}/ai/chat`,
     // Phase 1 endpoints
-    searchOrders: `/sales/search/orders`,
-    bulkStatus: `/sales/bulk-status`,
-    exportSales: `/sales/export/csv`,
-    inventoryList: `/inventory/`,
-    exportInventory: `/inventory/export/csv`,
+    searchOrders: `${API_SERVER_URL}/sales/search/orders`,
+    bulkStatus: `${API_SERVER_URL}/sales/bulk-status`,
+    exportSales: `${API_SERVER_URL}/sales/export/csv`,
+    inventoryList: `${API_SERVER_URL}/inventory/`,
+    exportInventory: `${API_SERVER_URL}/inventory/export/csv`,
     // Phase 2 endpoints
-    suppliersList: `/suppliers/`,
-    exportSuppliers: `/suppliers/export/csv`,
-    customersList: `/customers/`,
-    exportCustomers: `/customers/export/csv`,
+    suppliersList: `${API_SERVER_URL}/suppliers/`,
+    exportSuppliers: `${API_SERVER_URL}/suppliers/export/csv`,
+    customersList: `${API_SERVER_URL}/customers/`,
+    exportCustomers: `${API_SERVER_URL}/customers/export/csv`,
     teamMembers: `${API_BASE_URL}/team/members`,
     teamInvites: `${API_BASE_URL}/team/invites`,
     teamSendInvite: `${API_BASE_URL}/team/invites`,
@@ -38,7 +40,8 @@ const API_URLS = {
     logisticsShipments: `${API_BASE_URL}/logistics/shipments`,
     logisticsReturns: `${API_BASE_URL}/logistics/returns`,
     activityNotifications: `${API_BASE_URL}/activity/notifications`,
-    activityLogs: `${API_BASE_URL}/activity/logs`
+    activityLogs: `${API_BASE_URL}/activity/logs`,
+    userMe: `${API_BASE_URL}/user/me`
 };
 
 let charts = {};
@@ -53,7 +56,7 @@ async function fetchWithAuth(url, options = {}) {
     if (response.status !== 401) return response;
 
     try {
-        const refresh = await fetch("/api/refresh", { method: "POST", credentials: "include" });
+        const refresh = await fetch(API_SERVER_URL + "/api/refresh", { method: "POST", credentials: "include" });
         if (refresh.ok) {
             response = await fetch(url, opts);
             if (response.status !== 401) return response;
@@ -93,6 +96,11 @@ function showSection(sectionName, event) {
 
     targetSection.classList.remove('hidden');
 
+    if (sectionName === 'settings') loadUserSettings();
+    if (sectionName === 'suppliers') loadSuppliers();
+    if (sectionName === 'customers') loadCustomers();
+
+
     document.querySelectorAll('.nav-item')
         .forEach(item => item.classList.remove('active'));
 
@@ -101,6 +109,15 @@ function showSection(sectionName, event) {
     if (activeNavItem) activeNavItem.classList.add('active');
 
     loadDataForSection(sectionName);
+}
+
+function switchInventoryTab(tabName) {
+    document.querySelectorAll('#inventory-section .tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(tabName));
+    });
+    document.querySelectorAll('#inventory-section .tab-content').forEach(content => {
+        content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
+    });
 }
 
 
@@ -343,46 +360,29 @@ async function fetchAlerts() {
     try {
         const res = await fetchWithAuth(API_URLS.activeAlerts);
         const data = await res.json();
-        const container = document.getElementById('alerts-container');
-        if (!container) return;
+        const tbody = document.getElementById('alerts-table-body');
+        if (!tbody) return;
 
         if (data.length === 0) {
-            container.innerHTML = `
-                <div class="card" style="border: 1px solid #dcfce7; background: #f0fdf4;">
-                    <div class="card-header-padded" style="display: flex; align-items: center; gap: 12px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        <p style="color: #15803d; font-weight: 500; margin: 0;">No active alerts. Your supply chain is running smoothly!</p>
-                    </div>
-                </div>
-            `;
+            tbody.innerHTML = `<tr><td colspan="3" style="padding: 24px; text-align: center; color: #15803d; font-weight: 500;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: middle; margin-right: 8px;">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                No active alerts. Your supply chain is running smoothly!
+            </td></tr>`;
             return;
         }
 
-        container.innerHTML = data.map(alert => {
-            let iconSvg = '';
-            if (alert.type === 'Low Stock') {
-                iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`;
-            } else if (alert.type === 'Late Shipment') {
-                iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`;
-            } else {
-                iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
-            }
-
+        tbody.innerHTML = data.map(alert => {
+            const severityClass = alert.severity === 'High' ? 'severity-high' : alert.severity === 'Medium' ? 'severity-medium' : 'severity-info';
             return `
-                <div class="card" style="border-left: 4px solid ${alert.severity === 'High' ? '#ef4444' : '#f59e0b'}; margin-bottom: 12px;">
-                    <div class="card-header-padded" style="padding: 16px 24px; display: flex; align-items: center; gap: 16px;">
-                        <div style="color: ${alert.severity === 'High' ? '#ef4444' : '#f59e0b'}; display: flex;">${iconSvg}</div>
-                        <div style="flex: 1;">
-                            <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">${alert.type}</h4>
-                            <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">${alert.message}</p>
-                        </div>
-                        <span class="badge" style="background: ${alert.severity === 'High' ? '#fee2e2' : '#fef3c7'}; color: ${alert.severity === 'High' ? '#b91c1c' : '#b45309'}">
-                            ${alert.severity} Priority
-                        </span>
-                    </div>
-                </div>
+                <tr>
+                    <td><div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1e293b;">
+                        ${alert.type}
+                    </div></td>
+                    <td style="color: #64748b; font-size: 13px;">${alert.message}</td>
+                    <td><span class="alert-severity-badge ${severityClass}">${alert.severity}</span></td>
+                </tr>
             `;
         }).join('');
     } catch (e) { handleFetchError(e, "fetch alerts"); }
@@ -813,7 +813,7 @@ function renderOrdersTable(data) {
             <td>${o.product_name}</td>
             <td>${o.category || '-'}</td>
             <td>${o.quantity}</td>
-            <td>$${Number(o.unit_price).toFixed(2)}</td>
+            <td>${Number(o.unit_price).toFixed(2)}</td>
             <td>${o.order_date || '-'}</td>
             <td>
                 <select class="inline-status-select" onchange="updateSingleOrderStatus(${o.id}, this.value)">
@@ -1182,19 +1182,9 @@ function closeModal(id) {
    PHASE 2: SUPPLIER MANAGEMENT
    ==================================================================== */
 
-let supplierSearchTimer = null;
-
-function debounceSupplierSearch() {
-    clearTimeout(supplierSearchTimer);
-    supplierSearchTimer = setTimeout(() => loadSuppliers(), 400);
-}
-
 async function loadSuppliers() {
     try {
-        const search = document.getElementById('supplierSearch')?.value || '';
-        let url = API_URLS.suppliersList;
-        if (search) url += `?search=${encodeURIComponent(search)}`;
-        const res = await fetchWithAuth(url);
+        const res = await fetchWithAuth(API_URLS.suppliersList);
         if (!res.ok) throw new Error('Failed to load suppliers');
         const data = await res.json();
         renderSuppliersTable(data);
@@ -1320,23 +1310,11 @@ async function exportSuppliers() {
    PHASE 2: CUSTOMER MANAGEMENT
    ==================================================================== */
 
-let customerSearchTimer = null;
-
-function debounceCustomerSearch() {
-    clearTimeout(customerSearchTimer);
-    customerSearchTimer = setTimeout(() => loadCustomers(), 400);
-}
-
 async function loadCustomers() {
     try {
-        const search = document.getElementById('customerSearch')?.value || '';
         const segment = document.getElementById('customerSegmentFilter')?.value || '';
         let url = API_URLS.customersList;
-        const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        if (segment) params.set('segment', segment);
-        const qs = params.toString();
-        if (qs) url += `?${qs}`;
+        if (segment) url += `?segment=${segment}`;
         const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error('Failed to load customers');
         const data = await res.json();
@@ -1515,7 +1493,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .find(s => !s.classList.contains('hidden'))?.id.replace('-section', '');
         if (activeSection === 'executive') loadDataForSection('executive');
         if (activeSection === 'automation') loadDataForSection('automation');
+        fetchNotifications();
     }, 30000);
+    fetchNotifications(); // Initial call
     setupAIChat();
     setupThemeToggle();
 });
@@ -1654,6 +1634,7 @@ async function loadInvoices() {
         const res = await fetchWithAuth(API_URLS.financeInvoices);
         const invoices = await res.json();
         const tbody = document.querySelector('#invoicesTable tbody');
+        if (!tbody) return;
         tbody.innerHTML = invoices.map(inv => `
             <tr>
                 <td class="font-bold">${inv.invoice_number}</td>
@@ -1669,7 +1650,7 @@ async function loadInvoices() {
                 </td>
             </tr>
         `).join('') || '<tr><td colspan="7" class="text-center">No invoices found.</td></tr>';
-        loadActivityLogs('Finance', '#financeLogsTable tbody');
+        loadActivityLogs('Invoice', '#financeLogsTable tbody');
     } catch (e) { console.error("Failed to load invoices", e); }
 }
 
@@ -1688,7 +1669,11 @@ async function loadLogistics() {
                 <td><code>${s.tracking_number}</code></td>
                 <td>${s.order_id}</td>
                 <td>${s.carrier}</td>
-                <td><span class="badge ${getStatusBadgeClass(s.status)}">${s.status}</span></td>
+                <td>
+                    <select class="inline-status-select badge ${getStatusBadgeClass(s.status)}" onchange="updateShipmentStatus(${s.id}, this.value); this.className = 'inline-status-select badge ' + getStatusBadgeClass(this.value)">
+                        ${['Processing', 'Shipped', 'In Transit', 'Delivered', 'Exception'].map(st => `<option value="${st}" ${s.status === st ? 'selected' : ''}>${st}</option>`).join('')}
+                    </select>
+                </td>
             </tr>
         `).join('') || '<tr><td colspan="4" class="text-center">No active shipments.</td></tr>';
 
@@ -1700,7 +1685,7 @@ async function loadLogistics() {
                 <td><span class="badge badge-outline">${r.refund_status}</span></td>
             </tr>
         `).join('') || '<tr><td colspan="3" class="text-center">No returns processed.</td></tr>';
-        loadActivityLogs('Logistics', '#logisticsLogsTable tbody');
+        loadActivityLogs('Shipment', '#logisticsLogsTable tbody');
     } catch (e) { console.error("Failed to load logistics", e); }
 }
 
@@ -1708,8 +1693,23 @@ function getStatusBadgeClass(status) {
     const s = status.toLowerCase();
     if (s.includes('paid') || s.includes('delivered') || s.includes('success')) return 'badge-success';
     if (s.includes('unpaid') || s.includes('pending')) return 'badge-warning';
+    if (s.includes('processing') || s.includes('transit') || s.includes('shipped')) return 'badge-info';
     if (s.includes('overdue') || s.includes('exception')) return 'badge-error';
     return 'badge-outline';
+}
+
+async function updateShipmentStatus(shipmentId, newStatus) {
+    try {
+        await fetchWithAuth(`${API_URLS.logisticsShipments}/${shipmentId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        loadActivityLogs('Shipment', '#logisticsLogsTable tbody');
+    } catch (e) {
+        alert('Failed to update shipment status');
+        loadLogistics();
+    }
 }
 
 async function generateInvoiceForOrder(orderId, amount, customer) {
@@ -1811,19 +1811,16 @@ async function markAsRead(id) {
 }
 
 async function markAllNotificationsAsRead() {
-    // Basic implementation: fetch current notifications and mark each
-    const list = document.getElementById('notificationList');
-    const items = list.querySelectorAll('.notification-item.unread');
-    if (items.length === 0) return;
-
-    alert("Marking all as read...");
-    // Ideally a backend endpoint for this, but we can iterate for now
-    fetchNotifications(); // Refresh list
+    try {
+        await fetchWithAuth(`${API_BASE_URL}/activity/notifications/read-all`, { method: 'POST' });
+        fetchNotifications();
+    } catch (e) { console.error("Mark all read failed", e); }
 }
 
 async function loadActivityLogs(type, selector) {
     try {
-        const res = await fetchWithAuth(`${API_URLS.activityLogs}?entity_type=${type}`);
+        const url = type ? `${API_URLS.activityLogs}?entity_type=${type}` : API_URLS.activityLogs;
+        const res = await fetchWithAuth(url);
         const logs = await res.json();
         const tbody = document.querySelector(selector);
         if (!tbody) return;
@@ -1837,4 +1834,29 @@ async function loadActivityLogs(type, selector) {
             </tr>
         `).join('') || '<tr><td colspan="4" class="text-center">No recent activity.</td></tr>';
     } catch (e) { console.error("Failed to load logs", e); }
+}
+
+/* ---------------- SETTINGS & PROFILE ---------------- */
+
+async function loadUserSettings() {
+    try {
+        const res = await fetchWithAuth(API_URLS.userMe);
+        if (!res.ok) throw new Error("Failed to load profile");
+        const user = await res.json();
+        document.getElementById('settingsUsername').value = user.username;
+        document.getElementById('settingsEmail').value = user.email;
+    } catch (e) { console.error("Settings load error", e); }
+}
+
+async function updateUserSettings() {
+    const username = document.getElementById('settingsUsername').value.trim();
+    try {
+        const res = await fetchWithAuth(API_URLS.userMe, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username })
+        });
+        if (!res.ok) throw new Error("Update failed");
+        alert("Profile updated successfully!");
+    } catch (e) { alert("Error: " + e.message); }
 }

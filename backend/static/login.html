@@ -151,6 +151,7 @@
 
         .hero-title span {
             background: linear-gradient(90deg, #22d3ee, #818cf8);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -516,6 +517,7 @@
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
     <div class="grid-overlay"></div>
+    <script src="/static/config.js"></script>
 
     <main class="main-card">
         <!-- LEFT PANEL -->
@@ -795,7 +797,8 @@
             text.style.opacity = '0.5';
 
             try {
-                const response = await fetch('/api/login', {
+                const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
+                const response = await fetch(apiBase + '/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -841,7 +844,8 @@
             text.style.opacity = '0.5';
 
             try {
-                const response = await fetch('/api/register', {
+                const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
+                const response = await fetch(apiBase + '/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, email, password })
