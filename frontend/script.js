@@ -17,16 +17,16 @@ const API_URLS = {
     businessViability: `${API_SERVER_URL}/ai/business-viability`,
     aiChat: `${API_BASE_URL}/ai/chat`,
     // Phase 1 endpoints
-    searchOrders: `${API_SERVER_URL}/sales/search/orders`,
-    bulkStatus: `${API_SERVER_URL}/sales/bulk-status`,
-    exportSales: `${API_SERVER_URL}/sales/export/csv`,
-    inventoryList: `${API_SERVER_URL}/inventory/`,
-    exportInventory: `${API_SERVER_URL}/inventory/export/csv`,
+    searchOrders: `${API_BASE_URL}/sales/search/orders`,
+    bulkStatus: `${API_BASE_URL}/sales/bulk-status`,
+    exportSales: `${API_BASE_URL}/sales/export/csv`,
+    inventoryList: `${API_BASE_URL}/inventory/`,
+    exportInventory: `${API_BASE_URL}/inventory/export/csv`,
     // Phase 2 endpoints
-    suppliersList: `${API_SERVER_URL}/suppliers/`,
-    exportSuppliers: `${API_SERVER_URL}/suppliers/export/csv`,
-    customersList: `${API_SERVER_URL}/customers/`,
-    exportCustomers: `${API_SERVER_URL}/customers/export/csv`,
+    suppliersList: `${API_BASE_URL}/suppliers/`,
+    exportSuppliers: `${API_BASE_URL}/suppliers/export/csv`,
+    customersList: `${API_BASE_URL}/customers/`,
+    exportCustomers: `${API_BASE_URL}/customers/export/csv`,
     teamMembers: `${API_BASE_URL}/team/members`,
     teamInvites: `${API_BASE_URL}/team/invites`,
     teamSendInvite: `${API_BASE_URL}/team/invites`,
@@ -42,10 +42,11 @@ const API_URLS = {
     activityNotifications: `${API_BASE_URL}/activity/notifications`,
     activityLogs: `${API_BASE_URL}/activity/logs`,
     userMe: `${API_BASE_URL}/user/me`,
+    logout: `${API_BASE_URL}/logout`,
     // Shared generic endpoints
-    uploadCsv: `${API_SERVER_URL}/upload/csv`,
-    sales: `${API_SERVER_URL}/sales/`,
-    inventory: `${API_SERVER_URL}/inventory/`
+    uploadCsv: `${API_BASE_URL}/upload/csv`,
+    sales: `${API_BASE_URL}/sales/`,
+    inventory: `${API_BASE_URL}/inventory/`
 };
 
 let charts = {};
@@ -71,6 +72,26 @@ async function fetchWithAuth(url, options = {}) {
 
     window.location.href = "/login.html";
     throw new Error("Unauthorized");
+}
+
+async function checkAuth() {
+    try {
+        const res = await fetchWithAuth(API_URLS.userMe);
+        if (!res.ok) throw new Error("Not authenticated");
+    } catch (e) {
+        // fetchWithAuth redirects automatically on 401
+        console.warn("Session check failed, redirecting...");
+    }
+}
+
+async function logout() {
+    try {
+        await fetch(API_URLS.logout, { method: "POST", credentials: "include" });
+    } catch (e) {
+        console.error("Logout failed", e);
+    }
+    localStorage.clear();
+    window.location.href = "/login.html";
 }
 
 /* ---------------- SECTION HANDLING ---------------- */
@@ -1490,7 +1511,10 @@ async function sendTeamInvite() {
 
 initializeTheme();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Session Guard: Initial check
+    await checkAuth();
+
     showSection('executive');
     setInterval(() => {
         const activeSection = Array.from(document.querySelectorAll('.dashboard-section'))
