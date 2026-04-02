@@ -41,7 +41,11 @@ const API_URLS = {
     logisticsReturns: `${API_BASE_URL}/logistics/returns`,
     activityNotifications: `${API_BASE_URL}/activity/notifications`,
     activityLogs: `${API_BASE_URL}/activity/logs`,
-    userMe: `${API_BASE_URL}/user/me`
+    userMe: `${API_BASE_URL}/user/me`,
+    // Shared generic endpoints
+    uploadCsv: `${API_SERVER_URL}/upload/csv`,
+    sales: `${API_SERVER_URL}/sales/`,
+    inventory: `${API_SERVER_URL}/inventory/`
 };
 
 let charts = {};
@@ -705,7 +709,7 @@ async function uploadCSV() {
     }
 
     try {
-        const response = await fetchWithAuth(`/upload/csv?mode=${mode}`, {
+        const response = await fetchWithAuth(`${API_URLS.uploadCsv}?mode=${mode}`, {
             method: 'POST',
             body: formData
         });
@@ -900,7 +904,7 @@ function clearSelection() {
 
 async function updateSingleOrderStatus(orderId, newStatus) {
     try {
-        await fetchWithAuth(`/sales/${orderId}`, {
+        await fetchWithAuth(`${API_URLS.sales}${orderId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ delivery_status: newStatus })
@@ -932,7 +936,7 @@ async function bulkUpdateStatus() {
 async function deleteOrder(orderId) {
     if (!confirm('Are you sure you want to delete this order?')) return;
     try {
-        await fetchWithAuth(`/sales/${orderId}`, { method: 'DELETE' });
+        await fetchWithAuth(`${API_URLS.sales}${orderId}`, { method: 'DELETE' });
         loadOrders();
     } catch (e) {
         alert('Failed to delete order');
@@ -963,7 +967,7 @@ async function submitCreateOrder() {
     }
 
     try {
-        const res = await fetchWithAuth('/sales/', {
+        const res = await fetchWithAuth(API_URLS.sales, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1089,7 +1093,7 @@ async function submitEditInventory() {
         reorder_point: parseInt(document.getElementById('editInvReorderPoint').value),
     };
     try {
-        const res = await fetchWithAuth(`/inventory/${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1107,7 +1111,7 @@ async function submitEditInventory() {
 async function deleteInventoryItem(id, name) {
     if (!confirm(`Delete "${name}" from inventory?`)) return;
     try {
-        await fetchWithAuth(`/inventory/${id}`, { method: 'DELETE' });
+        await fetchWithAuth(`${API_URLS.inventory}${id}`, { method: 'DELETE' });
         loadInventoryItems();
         fetchInventoryHealth();
     } catch (e) {
@@ -1132,7 +1136,7 @@ async function submitStockAdjustment() {
     if (isNaN(adjustment) || adjustment === 0) { alert('Enter a valid non-zero adjustment.'); return; }
 
     try {
-        const res = await fetchWithAuth(`/inventory/${id}/adjust`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}${id}/adjust`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adjustment, reason })
