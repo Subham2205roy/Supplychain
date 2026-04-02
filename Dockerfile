@@ -25,4 +25,4 @@ COPY . .
 EXPOSE 7860
 
 # Command to run the application (includes automatic migrations)
-CMD python -m alembic upgrade head && uvicorn backend.app:app --host 0.0.0.0 --port 7860
+CMD ["python", "migrate_and_start.py"]
