@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from backend.database.database import get_db
 from backend.models.user_model import User
@@ -82,9 +83,13 @@ def _clear_cookies(resp: Response):
 
 @router.post("/api/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == user.email).first()
+    # Check for existing email or username
+    existing_user = db.query(User).filter(
+        or_(User.email == user.email, User.username == user.username)
+    ).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        detail = "Email already registered" if existing_user.email == user.email else "Username already taken"
+        raise HTTPException(status_code=400, detail=detail)
 
     # Check for a pending invite for this email
     invite = (

@@ -12,7 +12,7 @@ from backend.schemas import AutomationRequestOTP, AutomationVerifyOTP, Automatio
 from backend.routes.auth_routes import get_current_user
 from backend.mail_utils import send_otp_email, send_success_confirmation
 
-router = APIRouter(prefix="/api/automation", tags=["Automation"])
+router = APIRouter(prefix="/automation", tags=["Automation"])
 
 @router.post("/request-otp")
 def request_otp(

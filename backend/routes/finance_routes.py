@@ -13,7 +13,7 @@ from backend.routes.auth_routes import get_current_user
 from backend.models.user_model import User
 
 router = APIRouter(
-    prefix="/api/finance",
+    prefix="/finance",
     tags=["Finance"]
 )
 

@@ -1474,21 +1474,29 @@ async function loadPendingInvites() {
         const res = await fetchWithAuth(API_URLS.teamInvites);
         const tbody = document.getElementById('pendingInvitesBody');
         if (!res.ok) {
-            tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">Could not load invites (owner access required).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">Could not load invites (owner access required).</td></tr>';
             return;
         }
         const data = await res.json();
         if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
             return;
         }
         tbody.innerHTML = data.map(inv => `<tr>
             <td>${inv.invited_email}</td>
+            <td style="font-family:monospace; color:#3b82f6; display:flex; align-items:center; gap:8px;">
+                <span>${inv.token.substring(0, 8)}...</span>
+                <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 10px;" onclick="copyToClipboard('${inv.token}')">Copy</button>
+            </td>
             <td><span class="status-badge status-pending">${inv.status}</span></td>
             <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
             <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
         </tr>`).join('');
     } catch (err) { handleFetchError(err, 'loadPendingInvites'); }
+}
+
+function openInviteModal() {
+    openModal('inviteModal');
 }
 
 async function sendTeamInvite() {
@@ -1502,9 +1510,58 @@ async function sendTeamInvite() {
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed to send invite'); }
         document.getElementById('inviteEmail').value = '';
-        alert('Invitation sent successfully!');
+        closeModal('inviteModal');
+        alert('Invitation sent! Give the token from the "Pending Invitations" table to your teammate.');
         loadPendingInvites();
     } catch (err) { alert('Error: ' + err.message); }
+}
+
+function openAcceptInviteModal() {
+    document.getElementById('acceptInviteToken').value = '';
+    openModal('acceptInviteModal');
+}
+
+async function submitAcceptInvite() {
+    const token = document.getElementById('acceptInviteToken').value.trim();
+    if (!token) return alert('Please enter an invitation token.');
+    
+    try {
+        const res = await fetchWithAuth(`${API_BASE_URL}/team/invites/accept`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+        });
+        
+        if (!res.ok) {
+            const e = await res.json();
+            throw new Error(e.detail || 'Failed to join team');
+        }
+        
+        alert('Successfully joined the team!');
+        closeModal('acceptInviteModal');
+        // Refresh everything since company membership changed
+        loadTeamMembers();
+        loadPendingInvites();
+        loadDataForSection('executive'); // Refresh KPIs
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Token copied to clipboard! Share it with your teammate.');
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        // Fallback for older browsers
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('Token copied to clipboard!');
+    });
 }
 
 /* ---------------- INIT ---------------- */

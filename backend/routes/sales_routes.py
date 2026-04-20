@@ -7,7 +7,7 @@ import csv
 import io
 
 # --- IMPORTS ---
-from backend.database.database import get_db
+from backend.database.database import get_db, date_format
 from backend import schemas
 from backend.models.sales_model import Sale
 from sqlalchemy import extract, func, or_
@@ -114,7 +114,7 @@ def get_sales_trend(
 
     results = (
         db.query(
-            func.to_char(Sale.order_date, 'YYYY-MM').label('month'),
+            date_format(Sale.order_date, 'YYYY-MM').label('month'),
             func.sum(Sale.unit_price * Sale.quantity).label('total_revenue')
         )
         .filter(Sale.order_date >= six_months_ago)
@@ -125,7 +125,7 @@ def get_sales_trend(
     )
 
     labels = [r.month for r in results]
-    data = [r.total_revenue for r in results]
+    data = [r.total_revenue or 0 for r in results]
 
     return {"labels": labels, "data": data}
 

@@ -19,7 +19,7 @@ from backend.models.sales_model import Sale
 from backend.models.user_model import User
 from backend.routes.auth_routes import get_current_user
 
-router = APIRouter(prefix="/api/ai", tags=["AI Chat"])
+router = APIRouter(prefix="/ai", tags=["AI Chat"])
 
 
 class ChatQuery(BaseModel):

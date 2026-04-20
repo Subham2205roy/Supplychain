@@ -853,7 +853,8 @@
                         <h1>Team Management</h1>
                         <p>Control access and manage organization members</p>
                     </div>
-                    <div class="page-actions">
+                    <div class="page-actions" style="display: flex; gap: 12px;">
+                        <button class="btn btn-outline" onclick="openAcceptInviteModal()">Join Existing Team</button>
                         <button class="btn btn-primary" onclick="openInviteModal()">Invite Member</button>
                     </div>
                 </div>
@@ -887,6 +888,7 @@
                                 <thead>
                                     <tr>
                                         <th>Email</th>
+                                        <th>Token</th>
                                         <th>Status</th>
                                         <th>Sent</th>
                                         <th>Expires</th>
@@ -1518,6 +1520,28 @@
                         <button type="button" class="btn btn-outline"
                             onclick="closeModal('adjustStockModal')">Cancel</button>
                         <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="acceptInviteModal" class="modal">
+        <div class="modal-content card" style="max-width: 500px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Join Existing Team</h3>
+                <button class="close-btn" onclick="closeModal('acceptInviteModal')">&times;</button>
+            </div>
+            <div class="card-header-padded">
+                <form onsubmit="event.preventDefault(); submitAcceptInvite();">
+                    <div class="form-group">
+                        <label class="form-label">Invitation Token</label>
+                        <input type="text" id="acceptInviteToken" class="form-input" placeholder="Paste your invitation token here" required>
+                        <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Ask your team owner for the token found in their "Pending Invitations" table.</p>
+                    </div>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('acceptInviteModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Join Team</button>
                     </div>
                 </form>
             </div>

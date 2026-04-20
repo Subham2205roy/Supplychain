@@ -12,21 +12,21 @@ const API_URLS = {
     ordersOverview: `${API_BASE_URL}/orders-overview`,
     successPrediction: `${API_BASE_URL}/success-prediction`,
     salesTrend: `${API_BASE_URL}/sales-trend`,
-    inventoryHealth: `${API_SERVER_URL}/forecasting/inventory-health`,
-    activeAlerts: `${API_SERVER_URL}/alerts/active`,
-    businessViability: `${API_SERVER_URL}/ai/business-viability`,
+    inventoryHealth: `${API_BASE_URL}/forecasting/inventory-health`,
+    activeAlerts: `${API_BASE_URL}/alerts/active`,
+    businessViability: `${API_BASE_URL}/ai/business-viability`,
     aiChat: `${API_BASE_URL}/ai/chat`,
     // Phase 1 endpoints
-    searchOrders: `${API_SERVER_URL}/sales/search/orders`,
-    bulkStatus: `${API_SERVER_URL}/sales/bulk-status`,
-    exportSales: `${API_SERVER_URL}/sales/export/csv`,
-    inventoryList: `${API_SERVER_URL}/inventory/`,
-    exportInventory: `${API_SERVER_URL}/inventory/export/csv`,
+    searchOrders: `${API_BASE_URL}/sales/search/orders`,
+    bulkStatus: `${API_BASE_URL}/sales/bulk-status`,
+    exportSales: `${API_BASE_URL}/sales/export/csv`,
+    inventoryList: `${API_BASE_URL}/inventory`,
+    exportInventory: `${API_BASE_URL}/inventory/export/csv`,
     // Phase 2 endpoints
-    suppliersList: `${API_SERVER_URL}/suppliers/`,
-    exportSuppliers: `${API_SERVER_URL}/suppliers/export/csv`,
-    customersList: `${API_SERVER_URL}/customers/`,
-    exportCustomers: `${API_SERVER_URL}/customers/export/csv`,
+    suppliersList: `${API_BASE_URL}/suppliers`,
+    exportSuppliers: `${API_BASE_URL}/suppliers/export/csv`,
+    customersList: `${API_BASE_URL}/customers`,
+    exportCustomers: `${API_BASE_URL}/customers/export/csv`,
     teamMembers: `${API_BASE_URL}/team/members`,
     teamInvites: `${API_BASE_URL}/team/invites`,
     teamSendInvite: `${API_BASE_URL}/team/invites`,
@@ -43,9 +43,9 @@ const API_URLS = {
     activityLogs: `${API_BASE_URL}/activity/logs`,
     userMe: `${API_BASE_URL}/user/me`,
     // Shared generic endpoints
-    uploadCsv: `${API_SERVER_URL}/upload/csv`,
-    sales: `${API_SERVER_URL}/sales/`,
-    inventory: `${API_SERVER_URL}/inventory/`
+    uploadCsv: `${API_BASE_URL}/upload/csv`,
+    sales: `${API_BASE_URL}/sales`,
+    inventory: `${API_BASE_URL}/inventory`
 };
 
 let charts = {};
@@ -69,8 +69,10 @@ async function fetchWithAuth(url, options = {}) {
         console.error("Refresh failed", e);
     }
 
-    window.location.href = "/login.html";
-    throw new Error("Unauthorized");
+    // Clear tokens and redirect
+    localStorage.removeItem('access_token');
+    window.location.href = "/"; // The login page is served at /
+    throw new Error('Unauthorized');
 }
 
 /* ---------------- SECTION HANDLING ---------------- */
@@ -1093,7 +1095,7 @@ async function submitEditInventory() {
         reorder_point: parseInt(document.getElementById('editInvReorderPoint').value),
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.inventory}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1111,7 +1113,7 @@ async function submitEditInventory() {
 async function deleteInventoryItem(id, name) {
     if (!confirm(`Delete "${name}" from inventory?`)) return;
     try {
-        await fetchWithAuth(`${API_URLS.inventory}${id}`, { method: 'DELETE' });
+        await fetchWithAuth(`${API_URLS.inventory}/${id}`, { method: 'DELETE' });
         loadInventoryItems();
         fetchInventoryHealth();
     } catch (e) {
@@ -1136,7 +1138,7 @@ async function submitStockAdjustment() {
     if (isNaN(adjustment) || adjustment === 0) { alert('Enter a valid non-zero adjustment.'); return; }
 
     try {
-        const res = await fetchWithAuth(`${API_URLS.inventory}${id}/adjust`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}/${id}/adjust`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adjustment, reason })
@@ -1282,7 +1284,7 @@ async function submitEditSupplier() {
         notes: document.getElementById('editSupNotes').value.trim() || null,
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.suppliersList}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.suppliersList}/${id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
@@ -1294,7 +1296,7 @@ async function submitEditSupplier() {
 async function deleteSupplier(id) {
     if (!confirm('Delete this supplier?')) return;
     try {
-        const res = await fetchWithAuth(`${API_URLS.suppliersList}${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URLS.suppliersList}/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         loadSuppliers();
     } catch (err) { alert('Error: ' + err.message); }
@@ -1398,7 +1400,7 @@ async function submitEditCustomer() {
         notes: document.getElementById('editCustNotes').value.trim() || null,
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.customersList}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.customersList}/${id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
@@ -1410,7 +1412,7 @@ async function submitEditCustomer() {
 async function deleteCustomer(id) {
     if (!confirm('Delete this customer?')) return;
     try {
-        const res = await fetchWithAuth(`${API_URLS.customersList}${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URLS.customersList}/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         loadCustomers();
     } catch (err) { alert('Error: ' + err.message); }
@@ -1838,6 +1840,94 @@ async function loadActivityLogs(type, selector) {
             </tr>
         `).join('') || '<tr><td colspan="4" class="text-center">No recent activity.</td></tr>';
     } catch (e) { console.error("Failed to load logs", e); }
+}
+
+/* ====================================================================
+   TEAM MANAGEMENT
+   ==================================================================== */
+
+async function loadTeamMembers() {
+    try {
+        const res = await fetchWithAuth(API_URLS.teamMembers);
+        if (!res.ok) throw new Error('Failed to load team members');
+        const data = await res.json();
+        renderTeamMembers(data);
+    } catch (err) { 
+        console.error('loadTeamMembers error:', err);
+        const tbody = document.getElementById('teamMembersBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#ef4444;">Error loading members.</td></tr>';
+    }
+}
+
+function renderTeamMembers(items) {
+    const tbody = document.getElementById('teamMembersBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#64748b;">No team members found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(m => `<tr>
+        <td><strong>${m.username || 'Unnamed'}</strong></td>
+        <td>${m.email}</td>
+        <td><span class="role-badge ${m.role ? m.role.toLowerCase() : 'member'}">${m.role || 'Member'}</span></td>
+    </tr>`).join('');
+}
+
+async function loadPendingInvites() {
+    try {
+        const res = await fetchWithAuth(API_URLS.teamInvites);
+        if (!res.ok) throw new Error('Failed to load pending invites');
+        const data = await res.json();
+        renderPendingInvites(data);
+    } catch (err) { 
+        console.error('loadPendingInvites error:', err);
+        const tbody = document.getElementById('pendingInvitesBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#ef4444;">Error loading invites.</td></tr>';
+    }
+}
+
+function renderPendingInvites(items) {
+    const tbody = document.getElementById('pendingInvitesBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(inv => `<tr>
+        <td>${inv.invited_email}</td>
+        <td><span class="status-badge pending">${inv.status}</span></td>
+        <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+        <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : 'Never'}</td>
+    </tr>`).join('');
+}
+
+function openInviteModal() {
+    const emailInput = document.getElementById('inviteEmail');
+    if (emailInput) emailInput.value = '';
+    openModal('inviteModal');
+}
+
+async function sendTeamInvite() {
+    const emailInput = document.getElementById('inviteEmail');
+    const email = emailInput.value.trim();
+    if (!email) return alert('Please enter an email address.');
+
+    try {
+        const res = await fetchWithAuth(API_URLS.teamSendInvite, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invited_email: email })
+        });
+        if (!res.ok) {
+            const e = await res.json();
+            throw new Error(e.detail || 'Failed to send invite');
+        }
+        alert('Invitation sent successfully!');
+        closeModal('inviteModal');
+        loadPendingInvites();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 /* ---------------- SETTINGS & PROFILE ---------------- */

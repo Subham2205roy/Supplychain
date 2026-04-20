@@ -40,8 +40,8 @@ def main():
 
     # 2. Start Application
     print("--- Starting Uvicorn ---")
-    # Hugging Face Spaces port is usually 7860
-    port = os.environ.get("PORT", "7860")
+    # Use port 8000 as default
+    port = os.environ.get("PORT", "8000")
     os.system(f"uvicorn backend.app:app --host 0.0.0.0 --port {port}")
 
 if __name__ == "__main__":

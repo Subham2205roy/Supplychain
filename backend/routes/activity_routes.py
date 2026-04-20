@@ -9,7 +9,7 @@ from backend.routes.auth_routes import get_current_user
 from backend.models.user_model import User
 
 router = APIRouter(
-    prefix="/api/activity",
+    prefix="/activity",
     tags=["Activity & Notifications"]
 )
 

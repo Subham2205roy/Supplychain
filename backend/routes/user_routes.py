@@ -5,7 +5,7 @@ from backend.models.user_model import User
 from backend.routes.auth_routes import get_current_user
 from backend import schemas
 
-router = APIRouter(prefix="/api/user", tags=["User"])
+router = APIRouter(prefix="/user", tags=["User"])
 
 @router.get("/me", response_model=schemas.UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):

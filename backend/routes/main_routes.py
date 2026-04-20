@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, and_
-from backend.database.database import get_db
+from backend.database.database import get_db, date_format
 from backend.models.sales_model import Sale
 import datetime
 from backend.routes.auth_routes import get_current_user
@@ -42,21 +42,33 @@ def get_kpis(
     total_cost_result = db.query(func.sum(Sale.unit_cost * Sale.quantity)).filter(
         Sale.company_id == current_user.company_id
     ).scalar() or 0
+    
     total_revenue_result = db.query(func.sum(Sale.unit_price * Sale.quantity)).filter(
         Sale.company_id == current_user.company_id
     ).scalar() or 0
-    profit_margin = ((total_revenue_result - total_cost_result) / total_revenue_result) * 100 if total_revenue_result > 0 else 0
+    
     avg_risk_result = db.query(func.avg(Sale.region_risk_score)).filter(
         Sale.company_id == current_user.company_id
     ).scalar() or 0
     
-    delivered_orders = db.query(Sale).filter(
-        Sale.delivery_status == 'Delivered',
-        Sale.company_id == current_user.company_id
-    )
-    total_delivered = delivered_orders.count()
-    on_time_deliveries = delivered_orders.filter(Sale.actual_delivery_date <= Sale.promised_delivery_date).count()
-    delivery_performance = (on_time_deliveries / total_delivered) * 100 if total_delivered > 0 else 0
+    # Profit Margin
+    profit_margin = 0
+    if total_revenue_result > 0:
+        profit_margin = ((total_revenue_result - total_cost_result) / total_revenue_result) * 100
+        
+    # Delivery Performance
+    total_delivered = db.query(func.count(Sale.id)).filter(
+        Sale.company_id == current_user.company_id,
+        Sale.delivery_status == "Delivered"
+    ).scalar() or 0
+    
+    delivered_on_time = db.query(func.count(Sale.id)).filter(
+        Sale.company_id == current_user.company_id,
+        Sale.delivery_status == "Delivered",
+        Sale.actual_delivery_date <= Sale.promised_delivery_date
+    ).scalar() or 0
+    
+    delivery_performance = (delivered_on_time / total_delivered) * 100 if total_delivered > 0 else 0
     
     return {
         "total_cost": round(total_cost_result),
@@ -72,7 +84,7 @@ def get_profit_trend(
 ):
     six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
     monthly_profit = db.query(
-        func.to_char(Sale.order_date, 'YYYY-MM').label("month"),
+        date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.sum(Sale.unit_price * Sale.quantity).label("total_revenue"),
         func.sum(Sale.unit_cost * Sale.quantity).label("total_cost")
     ).filter(
@@ -81,7 +93,14 @@ def get_profit_trend(
     ).group_by("month").order_by("month").all()
     
     labels = [row.month for row in monthly_profit]
-    data = [round(((r.total_revenue - r.total_cost) / r.total_revenue) * 100, 2) if r.total_revenue > 0 else 0 for r in monthly_profit]
+    # Handle revenue calculation safely
+    data = []
+    for r in monthly_profit:
+        rev = r.total_revenue or 0
+        cost = r.total_cost or 0
+        margin = round(((rev - cost) / rev) * 100, 2) if rev > 0 else 0
+        data.append(margin)
+        
     return {"labels": labels, "data": data}
 
 @router.get("/api/delivery-trend")
@@ -91,7 +110,7 @@ def get_delivery_trend(
 ):
     six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
     delivery_data = db.query(
-        func.to_char(Sale.order_date, 'YYYY-MM').label("month"),
+        date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.count(Sale.id).label("total_delivered"),
         func.sum(case((Sale.actual_delivery_date <= Sale.promised_delivery_date, 1), else_=0)).label("on_time")
     ).filter(
@@ -101,7 +120,13 @@ def get_delivery_trend(
     ).group_by("month").order_by("month").all()
     
     labels = [row.month for row in delivery_data]
-    data = [round((row.on_time / row.total_delivered) * 100, 1) if row.total_delivered > 0 else 0 for row in delivery_data]
+    data = []
+    for row in delivery_data:
+        total = row.total_delivered or 0
+        on_time = row.on_time or 0
+        perf = round((on_time / total) * 100, 1) if total > 0 else 0
+        data.append(perf)
+        
     return {"labels": labels, "data": data}
 
 @router.get("/api/gdp-comparison")
@@ -135,7 +160,7 @@ def get_revenue_history(
     five_years_ago = datetime.date.today().year - 4
     results = (
         db.query(
-            func.to_char(Sale.order_date, 'YYYY').label("year"),
+            date_format(Sale.order_date, 'YYYY').label("year"),
             func.sum(Sale.unit_price * Sale.quantity).label("total_revenue")
         )
         .filter(Sale.company_id == current_user.company_id)
@@ -164,7 +189,7 @@ def get_orders_overview(
     shipped_this_month = db.query(func.count(Sale.id)).filter(
         Sale.company_id == current_user.company_id,
         Sale.delivery_status == "Delivered",
-        func.to_char(Sale.order_date, 'YYYY-MM') == today.strftime("%Y-%m")
+        date_format(Sale.order_date, 'YYYY-MM') == today.strftime("%Y-%m")
     ).scalar() or 0
 
     return {"total_pending": int(total_pending), "total_shipped_month": int(shipped_this_month)}
@@ -238,7 +263,7 @@ def get_sales_trend(
     six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
 
     monthly_sales = db.query(
-        func.to_char(Sale.order_date, 'YYYY-MM').label("month"),
+        date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.sum(Sale.unit_price * Sale.quantity).label("total_revenue")
     ).filter(
         Sale.order_date >= six_months_ago,

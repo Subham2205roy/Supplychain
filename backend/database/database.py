@@ -35,6 +35,26 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+from sqlalchemy import func
+
+def date_format(column, format_str: str):
+    """
+    Returns a database-specific date formatting function.
+    Supports 'YYYY-MM' and 'YYYY'.
+    """
+    if is_sqlite:
+        # SQLite: strftime(format, timestring)
+        if format_str == 'YYYY-MM':
+            return func.strftime('%Y-%m', column)
+        elif format_str == 'YYYY':
+            return func.strftime('%Y', column)
+        else:
+            # Fallback for other formats
+            return func.strftime(format_str.replace('YYYY', '%Y').replace('MM', '%m').replace('DD', '%d'), column)
+    else:
+        # PostgreSQL: to_char(timestamp, format)
+        return func.to_char(column, format_str)
+
 def get_db():
     db = SessionLocal()
     try:

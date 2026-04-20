@@ -11,7 +11,7 @@ from backend.models.user_model import User
 from backend.schemas import TeamInviteCreate, TeamInviteAccept, TeamInviteResponse
 
 router = APIRouter(
-    prefix="/api/team",
+    prefix="/team",
     tags=["Team"]
 )
 
