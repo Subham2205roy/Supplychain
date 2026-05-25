@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Business Intelligence Dashboard</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/globe.gl"></script>
-    <script src="/config.js"></script>
+    <script src="/static/config.js"></script>
 </head>
 
 <body>
@@ -208,11 +208,13 @@
                         <div class="notification-panel hidden" id="notificationPanel">
                             <div class="panel-header">
                                 <h3>Notifications</h3>
-                                <button class="text-btn" onclick="markAllNotificationsAsRead()">Mark all as
-                                    read</button>
+                                <button class="btn-close" onclick="toggleNotifications()" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
                             </div>
                             <div class="panel-content" id="notificationList">
                                 <p class="empty-msg">No new notifications</p>
+                            </div>
+                            <div class="panel-footer">
+                                <button class="btn btn-clear-all" onclick="markAllNotificationsAsRead()">Clear All Notifications</button>
                             </div>
                         </div>
                     </div>
@@ -859,12 +861,33 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2">
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header border-b">
+                        <h3 class="card-title">Your Organizations</h3>
+                    </div>
+                    <div class="card-content" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Organization Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myCompaniesBody">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
                     <div class="card">
                         <div class="card-header border-b">
                             <h3 class="card-title">Active Members</h3>
                         </div>
-                        <div class="card-content" style="padding: 0;">
+                        <div class="card-content" style="padding: 0; overflow-x: auto;">
                             <table class="data-table">
                                 <thead>
                                     <tr>
@@ -883,7 +906,7 @@
                         <div class="card-header border-b">
                             <h3 class="card-title">Pending Invitations</h3>
                         </div>
-                        <div class="card-content" style="padding: 0;">
+                        <div class="card-content" style="padding: 0; overflow-x: auto;">
                             <table class="data-table">
                                 <thead>
                                     <tr>
@@ -892,6 +915,7 @@
                                         <th>Status</th>
                                         <th>Sent</th>
                                         <th>Expires</th>
+                                        <th style="text-align: right;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="pendingInvitesBody">
@@ -1087,7 +1111,7 @@
                                 </div>
                             </div>
                             <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-                                <button class="btn btn-outline" style="width: 100%; color: #ef4444; border-color: #fca5a5;" onclick="logout()">Logout</button>
+                                <button class="btn btn-outline" style="width: 100%; color: #ef4444; border-color: #fca5a5;" onclick="window.location.href='/'">Logout</button>
                             </div>
                         </div>
                     </div>
@@ -1118,7 +1142,7 @@
         </div>
     </div>
 
-    <script src="/script.js"></script>
+    <script src="/static/script.js?v=3"></script>
 
     <!-- Phase 2 Modals -->
     <!-- Add Supplier Modal -->
@@ -1525,7 +1549,36 @@
             </div>
         </div>
     </div>
+    <div id="settings-section" class="dashboard-section hidden">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Settings</h1>
+                <p>Manage your personal profile and account preferences</p>
+            </div>
+        </div>
 
+        <div class="card" style="max-width: 600px;">
+            <div class="card-header border-b">
+                <h3 class="card-title">Personal Details</h3>
+            </div>
+            <div class="card-content">
+                <form id="settingsForm" onsubmit="event.preventDefault(); updateUserSettings();">
+                    <div class="form-group">
+                        <label class="form-label">Full Name / Username</label>
+                        <input type="text" id="settingsUsername" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="settingsEmail" class="form-input" required disabled>
+                        <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Email updates are currently disabled for security.</p>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div id="acceptInviteModal" class="modal">
         <div class="modal-content card" style="max-width: 500px;">
             <div class="card-header border-b">

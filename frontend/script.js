@@ -12,20 +12,20 @@ const API_URLS = {
     ordersOverview: `${API_BASE_URL}/orders-overview`,
     successPrediction: `${API_BASE_URL}/success-prediction`,
     salesTrend: `${API_BASE_URL}/sales-trend`,
-    inventoryHealth: `${API_SERVER_URL}/forecasting/inventory-health`,
-    activeAlerts: `${API_SERVER_URL}/alerts/active`,
-    businessViability: `${API_SERVER_URL}/ai/business-viability`,
+    inventoryHealth: `${API_BASE_URL}/forecasting/inventory-health`,
+    activeAlerts: `${API_BASE_URL}/alerts/active`,
+    businessViability: `${API_BASE_URL}/ai/business-viability`,
     aiChat: `${API_BASE_URL}/ai/chat`,
     // Phase 1 endpoints
     searchOrders: `${API_BASE_URL}/sales/search/orders`,
     bulkStatus: `${API_BASE_URL}/sales/bulk-status`,
     exportSales: `${API_BASE_URL}/sales/export/csv`,
-    inventoryList: `${API_BASE_URL}/inventory/`,
+    inventoryList: `${API_BASE_URL}/inventory`,
     exportInventory: `${API_BASE_URL}/inventory/export/csv`,
     // Phase 2 endpoints
-    suppliersList: `${API_BASE_URL}/suppliers/`,
+    suppliersList: `${API_BASE_URL}/suppliers`,
     exportSuppliers: `${API_BASE_URL}/suppliers/export/csv`,
-    customersList: `${API_BASE_URL}/customers/`,
+    customersList: `${API_BASE_URL}/customers`,
     exportCustomers: `${API_BASE_URL}/customers/export/csv`,
     teamMembers: `${API_BASE_URL}/team/members`,
     teamInvites: `${API_BASE_URL}/team/invites`,
@@ -42,11 +42,12 @@ const API_URLS = {
     activityNotifications: `${API_BASE_URL}/activity/notifications`,
     activityLogs: `${API_BASE_URL}/activity/logs`,
     userMe: `${API_BASE_URL}/user/me`,
-    logout: `${API_BASE_URL}/logout`,
     // Shared generic endpoints
     uploadCsv: `${API_BASE_URL}/upload/csv`,
-    sales: `${API_BASE_URL}/sales/`,
-    inventory: `${API_BASE_URL}/inventory/`
+    sales: `${API_BASE_URL}/sales`,
+    inventory: `${API_BASE_URL}/inventory`,
+    myCompanies: `${API_BASE_URL}/team/my-companies`,
+    switchContext: `${API_BASE_URL}/team/switch-context`
 };
 
 let charts = {};
@@ -70,28 +71,10 @@ async function fetchWithAuth(url, options = {}) {
         console.error("Refresh failed", e);
     }
 
-    window.location.href = "/login.html";
-    throw new Error("Unauthorized");
-}
-
-async function checkAuth() {
-    try {
-        const res = await fetchWithAuth(API_URLS.userMe);
-        if (!res.ok) throw new Error("Not authenticated");
-    } catch (e) {
-        // fetchWithAuth redirects automatically on 401
-        console.warn("Session check failed, redirecting...");
-    }
-}
-
-async function logout() {
-    try {
-        await fetch(API_URLS.logout, { method: "POST", credentials: "include" });
-    } catch (e) {
-        console.error("Logout failed", e);
-    }
-    localStorage.clear();
-    window.location.href = "/login.html";
+    // Clear tokens and redirect
+    localStorage.removeItem('access_token');
+    window.location.href = "/"; // The login page is served at /
+    throw new Error('Unauthorized');
 }
 
 /* ---------------- SECTION HANDLING ---------------- */
@@ -188,6 +171,7 @@ async function loadDataForSection(sectionName) {
     } else if (sectionName === 'customers') {
         loadCustomers();
     } else if (sectionName === 'team') {
+        loadMyCompanies();
         loadTeamMembers();
         loadPendingInvites();
     } else if (sectionName === 'automation') {
@@ -1114,7 +1098,7 @@ async function submitEditInventory() {
         reorder_point: parseInt(document.getElementById('editInvReorderPoint').value),
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.inventory}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1132,7 +1116,7 @@ async function submitEditInventory() {
 async function deleteInventoryItem(id, name) {
     if (!confirm(`Delete "${name}" from inventory?`)) return;
     try {
-        await fetchWithAuth(`${API_URLS.inventory}${id}`, { method: 'DELETE' });
+        await fetchWithAuth(`${API_URLS.inventory}/${id}`, { method: 'DELETE' });
         loadInventoryItems();
         fetchInventoryHealth();
     } catch (e) {
@@ -1157,7 +1141,7 @@ async function submitStockAdjustment() {
     if (isNaN(adjustment) || adjustment === 0) { alert('Enter a valid non-zero adjustment.'); return; }
 
     try {
-        const res = await fetchWithAuth(`${API_URLS.inventory}${id}/adjust`, {
+        const res = await fetchWithAuth(`${API_URLS.inventory}/${id}/adjust`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adjustment, reason })
@@ -1303,7 +1287,7 @@ async function submitEditSupplier() {
         notes: document.getElementById('editSupNotes').value.trim() || null,
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.suppliersList}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.suppliersList}/${id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
@@ -1315,7 +1299,7 @@ async function submitEditSupplier() {
 async function deleteSupplier(id) {
     if (!confirm('Delete this supplier?')) return;
     try {
-        const res = await fetchWithAuth(`${API_URLS.suppliersList}${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URLS.suppliersList}/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         loadSuppliers();
     } catch (err) { alert('Error: ' + err.message); }
@@ -1419,7 +1403,7 @@ async function submitEditCustomer() {
         notes: document.getElementById('editCustNotes').value.trim() || null,
     };
     try {
-        const res = await fetchWithAuth(`${API_URLS.customersList}${id}`, {
+        const res = await fetchWithAuth(`${API_URLS.customersList}/${id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
@@ -1431,7 +1415,7 @@ async function submitEditCustomer() {
 async function deleteCustomer(id) {
     if (!confirm('Delete this customer?')) return;
     try {
-        const res = await fetchWithAuth(`${API_URLS.customersList}${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URLS.customersList}/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         loadCustomers();
     } catch (err) { alert('Error: ' + err.message); }
@@ -1447,131 +1431,13 @@ async function exportCustomers() {
     } catch (err) { alert('Export failed: ' + err.message); }
 }
 
-/* ====================================================================
-   PHASE 2: TEAM MANAGEMENT
-   ==================================================================== */
 
-async function loadTeamMembers() {
-    try {
-        const res = await fetchWithAuth(API_URLS.teamMembers);
-        if (!res.ok) throw new Error('Failed to load team');
-        const data = await res.json();
-        const tbody = document.getElementById('teamMembersBody');
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#64748b;">No team members found.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(m => `<tr>
-            <td><strong>${m.username}</strong></td>
-            <td>${m.email}</td>
-            <td><span class="segment-badge" style="background:${m.role === 'Owner' ? '#8b5cf620' : '#3b82f620'};color:${m.role === 'Owner' ? '#8b5cf6' : '#3b82f6'};border:1px solid ${m.role === 'Owner' ? '#8b5cf640' : '#3b82f640'};">${m.role}</span></td>
-        </tr>`).join('');
-    } catch (err) { handleFetchError(err, 'loadTeamMembers'); }
-}
-
-async function loadPendingInvites() {
-    try {
-        const res = await fetchWithAuth(API_URLS.teamInvites);
-        const tbody = document.getElementById('pendingInvitesBody');
-        if (!res.ok) {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">Could not load invites (owner access required).</td></tr>';
-            return;
-        }
-        const data = await res.json();
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(inv => `<tr>
-            <td>${inv.invited_email}</td>
-            <td style="font-family:monospace; color:#3b82f6; display:flex; align-items:center; gap:8px;">
-                <span>${inv.token.substring(0, 8)}...</span>
-                <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 10px;" onclick="copyToClipboard('${inv.token}')">Copy</button>
-            </td>
-            <td><span class="status-badge status-pending">${inv.status}</span></td>
-            <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-            <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
-        </tr>`).join('');
-    } catch (err) { handleFetchError(err, 'loadPendingInvites'); }
-}
-
-function openInviteModal() {
-    openModal('inviteModal');
-}
-
-async function sendTeamInvite() {
-    const email = document.getElementById('inviteEmail').value.trim();
-    if (!email) return alert('Please enter an email address.');
-    try {
-        const res = await fetchWithAuth(API_URLS.teamSendInvite, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invited_email: email })
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed to send invite'); }
-        document.getElementById('inviteEmail').value = '';
-        closeModal('inviteModal');
-        alert('Invitation sent! Give the token from the "Pending Invitations" table to your teammate.');
-        loadPendingInvites();
-    } catch (err) { alert('Error: ' + err.message); }
-}
-
-function openAcceptInviteModal() {
-    document.getElementById('acceptInviteToken').value = '';
-    openModal('acceptInviteModal');
-}
-
-async function submitAcceptInvite() {
-    const token = document.getElementById('acceptInviteToken').value.trim();
-    if (!token) return alert('Please enter an invitation token.');
-    
-    try {
-        const res = await fetchWithAuth(`${API_BASE_URL}/team/invites/accept`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token })
-        });
-        
-        if (!res.ok) {
-            const e = await res.json();
-            throw new Error(e.detail || 'Failed to join team');
-        }
-        
-        alert('Successfully joined the team!');
-        closeModal('acceptInviteModal');
-        // Refresh everything since company membership changed
-        loadTeamMembers();
-        loadPendingInvites();
-        loadDataForSection('executive'); // Refresh KPIs
-    } catch (err) {
-        alert('Error: ' + err.message);
-    }
-}
-
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert('Token copied to clipboard! Share it with your teammate.');
-    }).catch(err => {
-        console.error('Copy failed:', err);
-        // Fallback for older browsers
-        const input = document.createElement('input');
-        input.value = text;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        alert('Token copied to clipboard!');
-    });
-}
 
 /* ---------------- INIT ---------------- */
 
 initializeTheme();
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // Session Guard: Initial check
-    await checkAuth();
-
+document.addEventListener('DOMContentLoaded', () => {
     showSection('executive');
     setInterval(() => {
         const activeSection = Array.from(document.querySelectorAll('.dashboard-section'))
@@ -1921,6 +1787,154 @@ async function loadActivityLogs(type, selector) {
     } catch (e) { console.error("Failed to load logs", e); }
 }
 
+/* ====================================================================
+   TEAM MANAGEMENT
+   ==================================================================== */
+
+async function loadTeamMembers() {
+    try {
+        const res = await fetchWithAuth(API_URLS.teamMembers);
+        if (!res.ok) throw new Error('Failed to load team members');
+        const data = await res.json();
+        renderTeamMembers(data);
+    } catch (err) { 
+        console.error('loadTeamMembers error:', err);
+        const tbody = document.getElementById('teamMembersBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#ef4444;">Error loading members.</td></tr>';
+    }
+}
+
+function renderTeamMembers(items) {
+    const tbody = document.getElementById('teamMembersBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#64748b;">No team members found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(m => `<tr>
+        <td><strong>${m.username || 'Unnamed'}</strong></td>
+        <td>${m.email}</td>
+        <td><span class="role-badge ${m.role ? m.role.toLowerCase() : 'member'}">${m.role || 'Member'}</span></td>
+    </tr>`).join('');
+}
+
+async function loadPendingInvites() {
+    try {
+        const res = await fetchWithAuth(API_URLS.teamInvites);
+        if (!res.ok) throw new Error('Failed to load pending invites');
+        const data = await res.json();
+        renderPendingInvites(data);
+    } catch (err) { 
+        console.error('loadPendingInvites error:', err);
+        const tbody = document.getElementById('pendingInvitesBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#ef4444;">Could not load (Owner required).</td></tr>';
+    }
+}
+
+function renderPendingInvites(items) {
+    const tbody = document.getElementById('pendingInvitesBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(inv => `<tr>
+        <td>${inv.invited_email}</td>
+        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">${inv.token || 'N/A'}</code> 
+            <button class="btn btn-outline btn-sm" style="padding:2px 6px;margin-left:4px;" onclick="copyToClipboard('${inv.token || ''}')" title="Copy Token">Copy</button>
+        </td>
+        <td><span class="status-badge pending">${inv.status}</span></td>
+        <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+        <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
+        <td style="text-align: right;">
+            <button class="btn btn-outline btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="removeInvite(${inv.id})">Remove</button>
+        </td>
+    </tr>`).join('');
+}
+
+async function removeInvite(inviteId) {
+    if (!confirm("Are you sure you want to remove this invitation?")) return;
+    try {
+        const res = await fetchWithAuth(`${API_BASE_URL}/team/invites/${inviteId}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const e = await res.json();
+            throw new Error(e.detail || 'Failed to remove invite');
+        }
+        alert('Invitation removed successfully!');
+        loadPendingInvites();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Invitation token copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy Text: ', err);
+    });
+}
+
+function openInviteModal() {
+    const emailInput = document.getElementById('inviteEmail');
+    if (emailInput) emailInput.value = '';
+    openModal('inviteModal');
+}
+
+function openAcceptInviteModal() {
+    const tokenInput = document.getElementById('acceptInviteToken');
+    if (tokenInput) tokenInput.value = '';
+    openModal('acceptInviteModal');
+}
+
+async function sendTeamInvite() {
+    const emailInput = document.getElementById('inviteEmail');
+    const email = emailInput.value.trim();
+    if (!email) return alert('Please enter an email address.');
+
+    try {
+        const res = await fetchWithAuth(API_URLS.teamSendInvite, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invited_email: email })
+        });
+        if (!res.ok) {
+            const e = await res.json();
+            throw new Error(e.detail || 'Failed to send invite');
+        }
+        alert('Invitation sent successfully!');
+        closeModal('inviteModal');
+        loadPendingInvites();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+async function submitAcceptInvite() {
+    const tokenInput = document.getElementById('acceptInviteToken');
+    const token = tokenInput.value.trim();
+    if (!token) return alert('Please enter an invitation token.');
+
+    try {
+        const response = await fetchWithAuth(API_URLS.teamAcceptInvite, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Failed to join team");
+        }
+
+        alert("Successfully joined the organization!");
+        closeModal('acceptInviteModal');
+        location.reload();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
 /* ---------------- SETTINGS & PROFILE ---------------- */
 
 async function loadUserSettings() {
@@ -1931,6 +1945,48 @@ async function loadUserSettings() {
         document.getElementById('settingsUsername').value = user.username;
         document.getElementById('settingsEmail').value = user.email;
     } catch (e) { console.error("Settings load error", e); }
+}
+
+async function loadMyCompanies() {
+    try {
+        const res = await fetchWithAuth(API_URLS.myCompanies);
+        if (!res.ok) throw new Error('Failed to load your organizations');
+        const data = await res.json();
+        renderMyCompanies(data);
+    } catch (err) {
+        console.error('loadMyCompanies error:', err);
+    }
+}
+
+function renderMyCompanies(items) {
+    const tbody = document.getElementById('myCompaniesBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">You are not a member of any organization yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(c => `<tr>
+        <td><strong>${c.name}</strong> ${c.is_active ? '<span style="font-size:10px; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:12px; margin-left:8px;">Active</span>' : ''}</td>
+        <td>${c.is_owner ? 'Owner' : 'Member'}</td>
+        <td><span class="status-badge ${c.is_active ? 'status-active' : 'status-shipped'}">${c.is_active ? 'Active' : 'Joined'}</span></td>
+        <td style="text-align: right;">
+            ${c.is_active 
+                ? '<span style="color:#94a3b8; font-size:12px;">Current Context</span>' 
+                : `<button class="btn btn-outline btn-sm" onclick="switchCompany(${c.id})">Switch to this Org</button>`
+            }
+        </td>
+    </tr>`).join('');
+}
+
+async function switchCompany(companyId) {
+    try {
+        const res = await fetchWithAuth(`${API_URLS.switchContext}/${companyId}`, { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to switch organization');
+        alert('Context switched successfully!');
+        window.location.reload(); // Refresh to see new company data
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 async function updateUserSettings() {
