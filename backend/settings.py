@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # CRITICAL: secret_key should ideally have no default in production
     # to force the developer to set it in .env
-    secret_key: str 
+    secret_key: str = "default-temp-secret-key-for-dev"
     jwt_algorithm: str = "HS256"
     jwt_audience: str = "supplychain-users"
     jwt_issuer: str = "supplychain-api"
