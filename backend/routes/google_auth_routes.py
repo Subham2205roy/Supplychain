@@ -4,7 +4,7 @@ import secrets
 import urllib.parse
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -25,11 +25,50 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 
+def is_safe_redirect(url: str) -> bool:
+    if not url:
+        return False
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        # Allow localhost / 127.0.0.1
+        if hostname in ("localhost", "127.0.0.1") or hostname.startswith("127.0.0.1:"):
+            return True
+        # Allow Hugging Face Space urls
+        if hostname.endswith(".hf.space") or hostname == "hf.space":
+            return True
+        # Allow Vercel urls
+        if hostname.endswith(".vercel.app") or hostname == "vercel.app":
+            return True
+    except Exception:
+        pass
+    return False
+
+
 @router.get("/api/auth/google/login")
-def google_login():
-    """Redirect user to Google's OAuth consent screen."""
+def google_login(frontend_url: str | None = None, request: Request = None):
+    """Redirect user to Google's OAuth consent screen with dynamic redirect target."""
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
+    # Detect safe redirect origin (from query param, referer header, settings, or request)
+    referer = request.headers.get("referer") if request else None
+    detected_origin = None
+    if referer:
+        try:
+            parsed_referer = urllib.parse.urlparse(referer)
+            detected_origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}"
+        except Exception:
+            pass
+
+    # Safe fallback origin resolution
+    redirect_target = ""
+    for candidate in (frontend_url, detected_origin, settings.frontend_url):
+        if candidate and is_safe_redirect(candidate):
+            redirect_target = candidate
+            break
 
     params = {
         "client_id": settings.google_client_id,
@@ -39,12 +78,15 @@ def google_login():
         "access_type": "offline",
         "prompt": "select_account",
     }
+    if redirect_target:
+        params["state"] = redirect_target
+
     url = f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}"
     return RedirectResponse(url)
 
 
 @router.get("/api/auth/google/callback")
-def google_callback(code: str = Query(...), db: Session = Depends(get_db)):
+def google_callback(code: str = Query(...), state: str | None = Query(None), db: Session = Depends(get_db)):
     """Handle the callback from Google after user grants permission."""
 
     # 1. Exchange authorization code for tokens
@@ -124,9 +166,15 @@ def google_callback(code: str = Query(...), db: Session = Depends(get_db)):
     refresh = create_refresh_token(user.email, pwd_hash, jti)
 
     # 5. Set cookies and redirect to dashboard
-    dashboard_url = settings.frontend_url.rstrip("/") + "/dashboard" if settings.frontend_url else "/dashboard"
+    target_origin = state if state and is_safe_redirect(state) else settings.frontend_url
+    if target_origin:
+        dashboard_url = target_origin.rstrip("/") + "/dashboard"
+    else:
+        dashboard_url = "/dashboard"
+
     response = RedirectResponse(url=dashboard_url, status_code=302)
     _set_access_cookie(response, access)
     _set_refresh_cookie(response, refresh)
 
     return response
+

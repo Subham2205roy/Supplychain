@@ -875,7 +875,8 @@
             const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
             const googleLoginBtn = document.getElementById('google-login-btn');
             if (googleLoginBtn) {
-                googleLoginBtn.href = apiBase + '/api/auth/google/login';
+                const currentOrigin = window.location.origin;
+                googleLoginBtn.href = apiBase + '/api/auth/google/login?frontend_url=' + encodeURIComponent(currentOrigin);
             }
         })();
     </script>
