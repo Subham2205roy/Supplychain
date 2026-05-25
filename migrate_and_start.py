@@ -40,9 +40,10 @@ def main():
 
     # 2. Start Application
     print("--- Starting Uvicorn ---")
-    # Bind dynamically to PORT env var (e.g. Hugging Face 7860) or fallback to 8000 for local development
-    port = os.environ.get("PORT", "8000")
-    host = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
+    # Bind dynamically based on whether we are in a Hugging Face Space
+    is_hf_space = "SPACE_ID" in os.environ
+    port = os.environ.get("PORT", "7860" if is_hf_space else "8000")
+    host = "0.0.0.0" if is_hf_space else "127.0.0.1"
     print(f"Starting server on http://{host}:{port}...")
     os.system(f"uvicorn backend.app:app --host {host} --port {port}")
 
