@@ -1,5 +1,4 @@
 const CONFIG = {
-    // Leave empty for local development. 
-    // When deploying, replace with your Render backend URL (e.g., https://backend.onrender.com)
-    API_BASE: "" 
+    // Fixed local URL
+    API_BASE: "http://127.0.0.1:8000" 
 };

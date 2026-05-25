@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from typing import List
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import uuid
@@ -8,6 +9,8 @@ from backend.routes.auth_routes import get_current_user
 from backend.models.company_model import Company
 from backend.models.team_invite_model import TeamInvite
 from backend.models.user_model import User
+from backend.models.user_company_model import UserCompany
+from backend.mail_utils import send_team_invite_email
 from backend.schemas import TeamInviteCreate, TeamInviteAccept, TeamInviteResponse
 
 router = APIRouter(
@@ -50,6 +53,9 @@ def create_team_invite(
     db.commit()
     db.refresh(invite)
 
+    # Automatically send the email invitation
+    send_team_invite_email(payload.invited_email, company.name, token)
+
     return invite
 
 
@@ -68,21 +74,84 @@ def accept_team_invite(
         db.commit()
         raise HTTPException(status_code=400, detail="Invite has expired.")
 
-    if current_user.company_id and current_user.company_id != invite.company_id:
-        current_company = db.query(Company).filter(Company.id == current_user.company_id).first()
-        if current_company and current_company.owner_user_id == current_user.id:
-            raise HTTPException(
-                status_code=400,
-                detail="Company owners cannot join another company with this account."
-            )
-
+    # Check if they are already a member
+    existing_member = db.query(UserCompany).filter(
+        UserCompany.user_id == current_user.id,
+        UserCompany.company_id == invite.company_id
+    ).first()
+    
+    if not existing_member:
+        # Create new membership
+        new_member = UserCompany(
+            user_id=current_user.id,
+            company_id=invite.company_id,
+            role="Member"
+        )
+        db.add(new_member)
+    
+    # Update active company (immediate switch as per user request)
     current_user.company_id = invite.company_id
     invite.status = "accepted"
     invite.accepted_by_user_id = current_user.id
 
     db.commit()
 
-    return {"message": "Invite accepted.", "company_id": invite.company_id}
+    return {"message": "Successfully joined team. Context switched.", "company_id": invite.company_id}
+
+
+@router.get("/my-companies")
+def list_my_companies(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Companies where they are a member in the UserCompany table
+    memberships = db.query(UserCompany).filter(UserCompany.user_id == current_user.id).all()
+    company_ids = [m.company_id for m in memberships]
+    
+    # 2. Companies they own (for back-compatibility/robustness)
+    owned_companies = db.query(Company).filter(Company.owner_user_id == current_user.id).all()
+    for oc in owned_companies:
+        if oc.id not in company_ids:
+            company_ids.append(oc.id)
+
+    # Fetch company details
+    companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
+    
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "is_owner": c.owner_user_id == current_user.id,
+            "is_active": c.id == current_user.company_id
+        }
+        for c in companies
+    ]
+
+
+@router.post("/switch-context/{company_id}")
+def switch_active_team(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify user belongs to this company
+    is_member = db.query(UserCompany).filter(
+        UserCompany.user_id == current_user.id,
+        UserCompany.company_id == company_id
+    ).first()
+    
+    is_owner = db.query(Company).filter(
+        Company.id == company_id,
+        Company.owner_user_id == current_user.id
+    ).first()
+    
+    if not is_member and not is_owner:
+        raise HTTPException(status_code=403, detail="You do not have access to this company.")
+        
+    current_user.company_id = company_id
+    db.commit()
+    
+    return {"message": "Context switched successfully.", "company_id": company_id}
 
 
 @router.get("/members")
@@ -112,7 +181,7 @@ def list_team_members(
     ]
 
 
-@router.get("/invites")
+@router.get("/invites", response_model=List[TeamInviteResponse])
 def list_pending_invites(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -134,10 +203,32 @@ def list_pending_invites(
     return [
         {
             "id": inv.id,
+            "company_id": inv.company_id,
             "invited_email": inv.invited_email,
+            "token": inv.token,
             "status": inv.status,
-            "created_at": str(inv.created_at) if inv.created_at else None,
-            "expires_at": str(inv.expires_at) if inv.expires_at else None,
+            "created_at": inv.created_at,
+            "expires_at": inv.expires_at
         }
         for inv in invites
     ]
+
+
+@router.delete("/invites/{invite_id}")
+def delete_team_invite(
+    invite_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    invite = db.query(TeamInvite).filter(TeamInvite.id == invite_id).first()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found.")
+
+    company = db.query(Company).filter(Company.id == invite.company_id).first()
+    if not company or company.owner_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the company owner can remove invites.")
+
+    db.delete(invite)
+    db.commit()
+
+    return {"message": "Invitation removed successfully."}

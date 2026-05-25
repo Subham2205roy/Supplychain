@@ -40,9 +40,10 @@ def main():
 
     # 2. Start Application
     print("--- Starting Uvicorn ---")
-    # Use port 8000 as default
-    port = os.environ.get("PORT", "8000")
-    os.system(f"uvicorn backend.app:app --host 0.0.0.0 --port {port}")
+    # Force port 8000 as requested
+    port = "8000"
+    print(f"Starting server on http://127.0.0.1:{port}...")
+    os.system(f"uvicorn backend.app:app --host 127.0.0.1 --port {port}")
 
 if __name__ == "__main__":
     main()

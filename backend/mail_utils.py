@@ -81,3 +81,42 @@ def send_success_confirmation(to_email: str):
     except Exception as e:
         print(f"❌ Failed to send confirmation: {e}")
         return False
+
+def send_team_invite_email(to_email: str, company_name: str, token: str):
+    """Sends a team invitation email with a joining token."""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = settings.smtp_user
+        msg['To'] = to_email
+        msg['Subject'] = f"Invitation to join {company_name} on GlobalBI"
+
+        body = f"""
+        Hello,
+
+        You have been invited to join the '{company_name}' team on GlobalBI.
+
+        --- HOW TO JOIN ---
+        1. Log in to your GlobalBI account (or create one).
+        2. Go to the "Team Management" section.
+        3. Click "Join Existing Team".
+        4. Enter the unique invitation token below:
+
+        👉 {token}
+
+        This token will expire in 7 days.
+
+        Regards,
+        GlobalBI Team
+        """
+        msg.attach(MIMEText(body, 'plain'))
+
+        with smtplib.SMTP(settings.smtp_server, settings.smtp_port) as server:
+            server.starttls()
+            server.login(settings.smtp_user, settings.smtp_password)
+            server.send_message(msg)
+            
+        print(f"✅ Team invitation sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send team invitation: {e}")
+        return False

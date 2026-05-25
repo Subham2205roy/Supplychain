@@ -104,6 +104,8 @@ class TeamInviteResponse(BaseModel):
     invited_email: EmailStr
     token: str
     status: str
+    created_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

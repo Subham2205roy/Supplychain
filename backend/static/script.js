@@ -45,7 +45,9 @@ const API_URLS = {
     // Shared generic endpoints
     uploadCsv: `${API_BASE_URL}/upload/csv`,
     sales: `${API_BASE_URL}/sales`,
-    inventory: `${API_BASE_URL}/inventory`
+    inventory: `${API_BASE_URL}/inventory`,
+    myCompanies: `${API_BASE_URL}/team/my-companies`,
+    switchContext: `${API_BASE_URL}/team/switch-context`
 };
 
 let charts = {};
@@ -169,6 +171,7 @@ async function loadDataForSection(sectionName) {
     } else if (sectionName === 'customers') {
         loadCustomers();
     } else if (sectionName === 'team') {
+        loadMyCompanies();
         loadTeamMembers();
         loadPendingInvites();
     } else if (sectionName === 'automation') {
@@ -1428,65 +1431,7 @@ async function exportCustomers() {
     } catch (err) { alert('Export failed: ' + err.message); }
 }
 
-/* ====================================================================
-   PHASE 2: TEAM MANAGEMENT
-   ==================================================================== */
 
-async function loadTeamMembers() {
-    try {
-        const res = await fetchWithAuth(API_URLS.teamMembers);
-        if (!res.ok) throw new Error('Failed to load team');
-        const data = await res.json();
-        const tbody = document.getElementById('teamMembersBody');
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:#64748b;">No team members found.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(m => `<tr>
-            <td><strong>${m.username}</strong></td>
-            <td>${m.email}</td>
-            <td><span class="segment-badge" style="background:${m.role === 'Owner' ? '#8b5cf620' : '#3b82f620'};color:${m.role === 'Owner' ? '#8b5cf6' : '#3b82f6'};border:1px solid ${m.role === 'Owner' ? '#8b5cf640' : '#3b82f640'};">${m.role}</span></td>
-        </tr>`).join('');
-    } catch (err) { handleFetchError(err, 'loadTeamMembers'); }
-}
-
-async function loadPendingInvites() {
-    try {
-        const res = await fetchWithAuth(API_URLS.teamInvites);
-        const tbody = document.getElementById('pendingInvitesBody');
-        if (!res.ok) {
-            tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">Could not load invites (owner access required).</td></tr>';
-            return;
-        }
-        const data = await res.json();
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(inv => `<tr>
-            <td>${inv.invited_email}</td>
-            <td><span class="status-badge status-pending">${inv.status}</span></td>
-            <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-            <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
-        </tr>`).join('');
-    } catch (err) { handleFetchError(err, 'loadPendingInvites'); }
-}
-
-async function sendTeamInvite() {
-    const email = document.getElementById('inviteEmail').value.trim();
-    if (!email) return alert('Please enter an email address.');
-    try {
-        const res = await fetchWithAuth(API_URLS.teamSendInvite, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invited_email: email })
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed to send invite'); }
-        document.getElementById('inviteEmail').value = '';
-        alert('Invitation sent successfully!');
-        loadPendingInvites();
-    } catch (err) { alert('Error: ' + err.message); }
-}
 
 /* ---------------- INIT ---------------- */
 
@@ -1882,7 +1827,7 @@ async function loadPendingInvites() {
     } catch (err) { 
         console.error('loadPendingInvites error:', err);
         const tbody = document.getElementById('pendingInvitesBody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#ef4444;">Error loading invites.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#ef4444;">Could not load (Owner required).</td></tr>';
     }
 }
 
@@ -1890,21 +1835,56 @@ function renderPendingInvites(items) {
     const tbody = document.getElementById('pendingInvitesBody');
     if (!tbody) return;
     if (!items || !items.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b;">No pending invitations.</td></tr>';
         return;
     }
     tbody.innerHTML = items.map(inv => `<tr>
         <td>${inv.invited_email}</td>
+        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">${inv.token || 'N/A'}</code> 
+            <button class="btn btn-outline btn-sm" style="padding:2px 6px;margin-left:4px;" onclick="copyToClipboard('${inv.token || ''}')" title="Copy Token">Copy</button>
+        </td>
         <td><span class="status-badge pending">${inv.status}</span></td>
         <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-        <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : 'Never'}</td>
+        <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
+        <td style="text-align: right;">
+            <button class="btn btn-outline btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="removeInvite(${inv.id})">Remove</button>
+        </td>
     </tr>`).join('');
+}
+
+async function removeInvite(inviteId) {
+    if (!confirm("Are you sure you want to remove this invitation?")) return;
+    try {
+        const res = await fetchWithAuth(`${API_BASE_URL}/team/invites/${inviteId}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const e = await res.json();
+            throw new Error(e.detail || 'Failed to remove invite');
+        }
+        alert('Invitation removed successfully!');
+        loadPendingInvites();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Invitation token copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy Text: ', err);
+    });
 }
 
 function openInviteModal() {
     const emailInput = document.getElementById('inviteEmail');
     if (emailInput) emailInput.value = '';
     openModal('inviteModal');
+}
+
+function openAcceptInviteModal() {
+    const tokenInput = document.getElementById('acceptInviteToken');
+    if (tokenInput) tokenInput.value = '';
+    openModal('acceptInviteModal');
 }
 
 async function sendTeamInvite() {
@@ -1930,6 +1910,31 @@ async function sendTeamInvite() {
     }
 }
 
+async function submitAcceptInvite() {
+    const tokenInput = document.getElementById('acceptInviteToken');
+    const token = tokenInput.value.trim();
+    if (!token) return alert('Please enter an invitation token.');
+
+    try {
+        const response = await fetchWithAuth(API_URLS.teamAcceptInvite, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Failed to join team");
+        }
+
+        alert("Successfully joined the organization!");
+        closeModal('acceptInviteModal');
+        location.reload();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
 /* ---------------- SETTINGS & PROFILE ---------------- */
 
 async function loadUserSettings() {
@@ -1940,6 +1945,48 @@ async function loadUserSettings() {
         document.getElementById('settingsUsername').value = user.username;
         document.getElementById('settingsEmail').value = user.email;
     } catch (e) { console.error("Settings load error", e); }
+}
+
+async function loadMyCompanies() {
+    try {
+        const res = await fetchWithAuth(API_URLS.myCompanies);
+        if (!res.ok) throw new Error('Failed to load your organizations');
+        const data = await res.json();
+        renderMyCompanies(data);
+    } catch (err) {
+        console.error('loadMyCompanies error:', err);
+    }
+}
+
+function renderMyCompanies(items) {
+    const tbody = document.getElementById('myCompaniesBody');
+    if (!tbody) return;
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">You are not a member of any organization yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(c => `<tr>
+        <td><strong>${c.name}</strong> ${c.is_active ? '<span style="font-size:10px; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:12px; margin-left:8px;">Active</span>' : ''}</td>
+        <td>${c.is_owner ? 'Owner' : 'Member'}</td>
+        <td><span class="status-badge ${c.is_active ? 'status-active' : 'status-shipped'}">${c.is_active ? 'Active' : 'Joined'}</span></td>
+        <td style="text-align: right;">
+            ${c.is_active 
+                ? '<span style="color:#94a3b8; font-size:12px;">Current Context</span>' 
+                : `<button class="btn btn-outline btn-sm" onclick="switchCompany(${c.id})">Switch to this Org</button>`
+            }
+        </td>
+    </tr>`).join('');
+}
+
+async function switchCompany(companyId) {
+    try {
+        const res = await fetchWithAuth(`${API_URLS.switchContext}/${companyId}`, { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to switch organization');
+        alert('Context switched successfully!');
+        window.location.reload(); // Refresh to see new company data
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 async function updateUserSettings() {
