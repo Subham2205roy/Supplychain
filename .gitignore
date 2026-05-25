@@ -4,7 +4,6 @@
 venv/
 ENV/
 env.bak
-*.env
 
 # Python
 __pycache__/
@@ -27,6 +26,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pyc
 
 # Database
 *.db
@@ -42,9 +42,20 @@ wheels/
 .DS_Store
 Thumbs.db
 
-supplychain.db
-*.pyc
-__pycache__/
-.env
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs & temp files
+*.log
+server_log*.txt
 err.txt
 out.txt
+
+# Backups & scratch (never track these)
+*_backup/
+scratch/
+backend/scratch/
+
+# Pytest
+.pytest_cache/

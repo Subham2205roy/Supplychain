@@ -12,11 +12,11 @@ from backend.database.database import SessionLocal
 from backend.models.automation_model import Automation
 from backend.settings import settings
 
-# --- Configuration ---
+# --- Configuration (reads from .env via settings) ---
 EMAIL_SERVER = 'imap.gmail.com'
-EMAIL_ADDRESS = 'my.supplychain.app@gmail.com'
-EMAIL_PASSWORD = 'gqsq nnoa dtsw ruyx'
-API_UPLOAD_URL = 'http://127.0.0.1:8000/upload/internal/csv'
+EMAIL_ADDRESS = settings.smtp_user
+EMAIL_PASSWORD = settings.smtp_password
+API_UPLOAD_URL = f'{settings.base_url}/upload/internal/csv'
 
 def get_active_automations():
     """Fetches verified sender-to-user mappings from the database."""

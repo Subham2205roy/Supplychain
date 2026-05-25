@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # Internal Service Authentication
     internal_service_key: str = ""
 
+    # Base URL for internal API calls
+    base_url: str = "http://127.0.0.1:8000"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

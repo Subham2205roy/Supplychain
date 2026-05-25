@@ -1,18 +1,34 @@
-"""Temporary script to run alembic migration against Supabase.
-Sets DATABASE_URL BEFORE any imports that read .env.
+"""Script to run alembic migration against Supabase.
+Reads DB credentials from .env via settings — no hardcoded passwords.
 """
 import os
 import sys
 
-# MUST set env var BEFORE importing anything from backend
+# Load .env first
+from dotenv import load_dotenv
+load_dotenv()
+
+# Build connection URL from .env variables
 from sqlalchemy.engine import URL
+
+db_host = os.getenv("DB_HOST")
+db_port = int(os.getenv("DB_PORT", "5432"))
+db_user = os.getenv("DB_USER", "postgres")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME", "postgres")
+
+if not db_host or not db_password:
+    print("ERROR: DB_HOST and DB_PASSWORD must be set in .env for Supabase migration.")
+    print("Uncomment the Supabase section in your .env file and set the values.")
+    sys.exit(1)
+
 url = URL.create(
     drivername="postgresql",
-    username="postgres",
-    password="Subham5062@_",
-    host="db.ndwnwzwuomwwyfthhdwb.supabase.co",
-    port=5432,
-    database="postgres",
+    username=db_user,
+    password=db_password,
+    host=db_host,
+    port=db_port,
+    database=db_name,
 )
 # render_as_string with hide_password=False keeps the %40 encoding
 os.environ["DATABASE_URL"] = url.render_as_string(hide_password=False)
