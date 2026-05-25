@@ -30,8 +30,9 @@ def test_account_lockout():
 
 def test_successful_reset():
     client = TestClient(app)
-    email = "reset@tester.com"
-    client.post("/api/register", json={"username": "reset", "email": email, "password": "secure123"})
+    suffix = str(int(time.time())) + "_reset"
+    email = f"reset_{suffix}@tester.com"
+    client.post("/api/register", json={"username": f"reset_{suffix}", "email": email, "password": "secure123"})
     
     # Fail 2 times
     client.post("/api/login", json={"email": email, "password": "wrong"})
@@ -45,3 +46,4 @@ def test_successful_reset():
     for i in range(4):
         response = client.post("/api/login", json={"email": email, "password": "wrong"})
         assert response.status_code == 400
+
