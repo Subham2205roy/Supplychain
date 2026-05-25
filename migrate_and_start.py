@@ -40,10 +40,11 @@ def main():
 
     # 2. Start Application
     print("--- Starting Uvicorn ---")
-    # Force port 8000 as requested
-    port = "8000"
-    print(f"Starting server on http://127.0.0.1:{port}...")
-    os.system(f"uvicorn backend.app:app --host 127.0.0.1 --port {port}")
+    # Bind dynamically to PORT env var (e.g. Hugging Face 7860) or fallback to 8000 for local development
+    port = os.environ.get("PORT", "8000")
+    host = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
+    print(f"Starting server on http://{host}:{port}...")
+    os.system(f"uvicorn backend.app:app --host {host} --port {port}")
 
 if __name__ == "__main__":
     main()
