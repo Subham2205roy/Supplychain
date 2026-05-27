@@ -75,3 +75,19 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Dynamically adjust settings for Hugging Face Spaces environment
+space_host = os.environ.get("SPACE_HOST")
+space_id = os.environ.get("SPACE_ID")
+
+if not space_host and space_id:
+    # E.g. "subham2205/supplychain-app" -> "subham2205-supplychain-app.hf.space"
+    parts = space_id.split("/")
+    if len(parts) == 2:
+        space_host = f"{parts[0]}-{parts[1]}.hf.space".replace("_", "-").lower()
+
+if space_host:
+    # If using the default localhost redirect URI, auto-update it to the secure space callback URL
+    if settings.google_redirect_uri == "http://127.0.0.1:8000/api/auth/google/callback":
+        settings.google_redirect_uri = f"https://{space_host}/api/auth/google/callback"
+
+
