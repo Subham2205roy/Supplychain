@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://subham2205-supplychain-app.hf.space/api/$1" },
     { "source": "/static/(.*)", "destination": "/$1" },
     { "source": "/dashboard", "destination": "/index.html" }
   ]
