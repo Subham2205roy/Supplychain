@@ -20,12 +20,12 @@ const API_URLS = {
     searchOrders: `${API_BASE_URL}/sales/search/orders`,
     bulkStatus: `${API_BASE_URL}/sales/bulk-status`,
     exportSales: `${API_BASE_URL}/sales/export/csv`,
-    inventoryList: `${API_BASE_URL}/inventory`,
+    inventoryList: `${API_BASE_URL}/inventory/`,
     exportInventory: `${API_BASE_URL}/inventory/export/csv`,
     // Phase 2 endpoints
-    suppliersList: `${API_BASE_URL}/suppliers`,
+    suppliersList: `${API_BASE_URL}/suppliers/`,
     exportSuppliers: `${API_BASE_URL}/suppliers/export/csv`,
-    customersList: `${API_BASE_URL}/customers`,
+    customersList: `${API_BASE_URL}/customers/`,
     exportCustomers: `${API_BASE_URL}/customers/export/csv`,
     teamMembers: `${API_BASE_URL}/team/members`,
     teamInvites: `${API_BASE_URL}/team/invites`,
@@ -44,8 +44,8 @@ const API_URLS = {
     userMe: `${API_BASE_URL}/user/me`,
     // Shared generic endpoints
     uploadCsv: `${API_BASE_URL}/upload/csv`,
-    sales: `${API_BASE_URL}/sales`,
-    inventory: `${API_BASE_URL}/inventory`,
+    sales: `${API_BASE_URL}/sales/`,
+    inventory: `${API_BASE_URL}/inventory/`,
     myCompanies: `${API_BASE_URL}/team/my-companies`,
     switchContext: `${API_BASE_URL}/team/switch-context`
 };
