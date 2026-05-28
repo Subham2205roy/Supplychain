@@ -315,7 +315,13 @@ async function fetchKpis() {
         document.getElementById('kpiDeliveryPerformance').textContent = `${data.delivery_performance}%`;
         document.getElementById('lastUpdated').textContent =
             `Last updated: ${new Date().toLocaleTimeString()}`;
-    } catch (e) { handleFetchError(e, "fetch KPIs"); }
+    } catch (e) {
+        console.error("Failed to fetch KPIs:", e);
+        ['kpiTotalCost', 'kpiProfitMargin', 'kpiRiskScore', 'kpiDeliveryPerformance'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "Error";
+        });
+    }
 }
 
 async function fetchOrderOverview() {
@@ -324,7 +330,13 @@ async function fetchOrderOverview() {
         const data = await res.json();
         document.getElementById('totalPendingOrders').textContent = data.total_pending;
         document.getElementById('shippedThisMonth').textContent = data.total_shipped_month;
-    } catch (e) { handleFetchError(e, "fetch orders"); }
+    } catch (e) {
+        console.error("Failed to fetch orders:", e);
+        const pending = document.getElementById('totalPendingOrders');
+        if (pending) pending.textContent = "Error";
+        const shipped = document.getElementById('shippedThisMonth');
+        if (shipped) shipped.textContent = "Error";
+    }
 }
 
 async function fetchSuccessPrediction() {
@@ -394,7 +406,11 @@ async function fetchAlerts() {
                 </tr>
             `;
         }).join('');
-    } catch (e) { handleFetchError(e, "fetch alerts"); }
+    } catch (e) {
+        console.error("fetch alerts error:", e);
+        const tbody = document.getElementById('alerts-table-body');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="padding: 24px; text-align: center; color: #ef4444;">Failed to load alerts. Please try again later.</td></tr>`;
+    }
 }
 
 /* ---------------- CHART UTILS ---------------- */
@@ -403,7 +419,21 @@ function fetchAndRenderChart(urlKey, chartId, initFn, options) {
     fetchWithAuth(API_URLS[urlKey])
         .then(res => res.json())
         .then(data => initFn(chartId, data, options))
-        .catch(e => handleFetchError(e, `chart ${chartId}`));
+        .catch(e => {
+            console.error(`fetchAndRenderChart error for ${chartId}:`, e);
+            const canvas = document.getElementById(chartId);
+            if (canvas && canvas.parentElement) {
+                let errDiv = canvas.parentElement.querySelector('.chart-error');
+                if (!errDiv) {
+                    errDiv = document.createElement('div');
+                    errDiv.className = 'chart-error';
+                    errDiv.style = "display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-size:14px;padding:20px;";
+                    errDiv.textContent = "Data unavailable";
+                    canvas.parentElement.appendChild(errDiv);
+                }
+                canvas.style.display = 'none';
+            }
+        });
 }
 
 function createOrUpdateChart(chartId, config) {
@@ -1044,7 +1074,9 @@ async function loadInventoryItems() {
             </tr>
         `).join('');
     } catch (e) {
-        handleFetchError(e, 'load inventory items');
+        console.error("Failed to load inventory items:", e);
+        const tbody = document.getElementById('inventoryManageBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#ef4444;">Failed to load inventory items. Please try again later.</td></tr>';
     }
 }
 
@@ -2000,4 +2032,20 @@ async function updateUserSettings() {
         if (!res.ok) throw new Error("Update failed");
         alert("Profile updated successfully!");
     } catch (e) { alert("Error: " + e.message); }
+}
+
+async function logoutUser() {
+    try {
+        await fetch(API_SERVER_URL + '/api/logout', { 
+            method: 'POST', 
+            credentials: 'include' 
+        });
+    } catch (e) {
+        console.error('Logout error', e);
+    }
+    // Clear any local state
+    localStorage.removeItem('access_token');
+    
+    // Redirect to login page
+    window.location.href = '/';
 }
