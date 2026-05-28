@@ -73,7 +73,7 @@ async function fetchWithAuth(url, options = {}) {
 
     // Clear tokens and redirect
     localStorage.removeItem('access_token');
-    window.location.href = "/"; // The login page is served at /
+    window.location.href = "/login.html"; // The login page is served at /login.html
     throw new Error('Unauthorized');
 }
 
@@ -2047,5 +2047,5 @@ async function logoutUser() {
     localStorage.removeItem('access_token');
     
     // Redirect to login page
-    window.location.href = '/';
+    window.location.href = '/login.html';
 }
