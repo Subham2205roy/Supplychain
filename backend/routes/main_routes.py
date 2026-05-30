@@ -1,5 +1,5 @@
 import re
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 import random
 from sqlalchemy.orm import Session
@@ -19,6 +19,27 @@ def get_last_n_months(n=6):
             year -= 1
         months.append(f"{year}-{month:02d}")
     return months
+
+def determine_months(months: int, db: Session, company_id: int) -> int:
+    if months > 0:
+        return months
+    oldest_sale = db.query(func.min(Sale.order_date)).filter(Sale.company_id == company_id).scalar()
+    if oldest_sale:
+        if isinstance(oldest_sale, str):
+            try:
+                oldest_date = datetime.datetime.strptime(oldest_sale[:10], "%Y-%m-%d").date()
+            except ValueError:
+                oldest_date = datetime.date.today()
+        else:
+            oldest_date = oldest_sale
+        
+        if isinstance(oldest_date, datetime.datetime):
+            oldest_date = oldest_date.date()
+            
+        today = datetime.date.today()
+        calculated_months = (today.year - oldest_date.year) * 12 + today.month - oldest_date.month + 1
+        return max(6, calculated_months)
+    return 6
 
 from backend.routes.auth_routes import get_current_user
 from backend.models.user_model import User
@@ -92,20 +113,25 @@ def get_kpis(
 
 @router.get("/api/profit-trend")
 def get_profit_trend(
+    months: int = Query(6),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
-    monthly_profit = db.query(
+    actual_months = determine_months(months, db, current_user.company_id)
+    
+    query = db.query(
         date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.sum(Sale.unit_price * Sale.quantity).label("total_revenue"),
         func.sum(Sale.unit_cost * Sale.quantity).label("total_cost")
-    ).filter(
-        Sale.order_date >= six_months_ago,
-        Sale.company_id == current_user.company_id
-    ).group_by("month").order_by("month").all()
+    ).filter(Sale.company_id == current_user.company_id)
+
+    if months > 0:
+        cutoff_date = datetime.date.today() - datetime.timedelta(days=30 * months)
+        query = query.filter(Sale.order_date >= cutoff_date)
+
+    monthly_profit = query.group_by("month").order_by("month").all()
     
-    labels = get_last_n_months(6)
+    labels = get_last_n_months(actual_months)
     data_dict = {month: 0.0 for month in labels}
     
     for r in monthly_profit:
@@ -121,21 +147,28 @@ def get_profit_trend(
 
 @router.get("/api/delivery-trend")
 def get_delivery_trend(
+    months: int = Query(6),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
-    delivery_data = db.query(
+    actual_months = determine_months(months, db, current_user.company_id)
+    
+    query = db.query(
         date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.count(Sale.id).label("total_delivered"),
         func.sum(case((Sale.actual_delivery_date <= Sale.promised_delivery_date, 1), else_=0)).label("on_time")
     ).filter(
-        Sale.order_date >= six_months_ago,
         Sale.delivery_status == 'Delivered',
         Sale.company_id == current_user.company_id
-    ).group_by("month").order_by("month").all()
+    )
+
+    if months > 0:
+        cutoff_date = datetime.date.today() - datetime.timedelta(days=30 * months)
+        query = query.filter(Sale.order_date >= cutoff_date)
+
+    delivery_data = query.group_by("month").order_by("month").all()
     
-    labels = get_last_n_months(6)
+    labels = get_last_n_months(actual_months)
     data_dict = {month: 0.0 for month in labels}
     
     for row in delivery_data:
@@ -274,24 +307,27 @@ def analyze_idea(idea_data: BusinessIdea):
 
 @router.get("/api/sales-trend")
 def get_sales_trend(
+    months: int = Query(6),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Calculates and returns the total sales revenue for the last 6 months.
+    Calculates and returns the total sales revenue for the specified months.
     """
-    six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
-
-    monthly_sales = db.query(
+    actual_months = determine_months(months, db, current_user.company_id)
+    
+    query = db.query(
         date_format(Sale.order_date, 'YYYY-MM').label("month"),
         func.sum(Sale.unit_price * Sale.quantity).label("total_revenue")
-    ).filter(
-        Sale.order_date >= six_months_ago,
-        Sale.company_id == current_user.company_id
-    ) \
-     .group_by("month").order_by("month").all()
+    ).filter(Sale.company_id == current_user.company_id)
 
-    labels = get_last_n_months(6)
+    if months > 0:
+        cutoff_date = datetime.date.today() - datetime.timedelta(days=30 * months)
+        query = query.filter(Sale.order_date >= cutoff_date)
+
+    monthly_sales = query.group_by("month").order_by("month").all()
+
+    labels = get_last_n_months(actual_months)
     data_dict = {month: 0.0 for month in labels}
     
     for row in monthly_sales:

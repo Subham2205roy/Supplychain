@@ -271,18 +271,36 @@
 
                 <div class="grid grid-cols-2" style="margin-bottom: 32px;">
                     <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Profit Margin Trend</h3>
-                            <p class="card-description">Monthly profit margin percentage</p>
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 class="card-title">Profit Margin Trend</h3>
+                                <p class="card-description">Monthly profit margin percentage</p>
+                            </div>
+                            <select id="profitTimeFilter" class="time-filter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; cursor: pointer; outline: none;" onchange="updateTrendChart('profit', this.value)">
+                                <option value="1">Last 1 Month</option>
+                                <option value="3">Last 3 Months</option>
+                                <option value="6" selected>Last 6 Months</option>
+                                <option value="12">Last 12 Months</option>
+                                <option value="0">All Time</option>
+                            </select>
                         </div>
                         <div class="card-content">
                             <div class="chart-container"><canvas id="profitChart"></canvas></div>
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Delivery Performance</h3>
-                            <p class="card-description">On-time delivery percentage by month</p>
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 class="card-title">Delivery Performance</h3>
+                                <p class="card-description">On-time delivery percentage by month</p>
+                            </div>
+                            <select id="deliveryTimeFilter" class="time-filter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; cursor: pointer; outline: none;" onchange="updateTrendChart('delivery', this.value)">
+                                <option value="1">Last 1 Month</option>
+                                <option value="3">Last 3 Months</option>
+                                <option value="6" selected>Last 6 Months</option>
+                                <option value="12">Last 12 Months</option>
+                                <option value="0">All Time</option>
+                            </select>
                         </div>
                         <div class="card-content">
                             <div class="chart-container"><canvas id="deliveryChart"></canvas></div>
@@ -369,9 +387,18 @@
                 </div>
 
                 <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h3 class="card-title">Monthly Sales Revenue</h3>
-                        <p class="card-description">Total revenue generated per month</p>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h3 class="card-title">Monthly Sales Revenue</h3>
+                            <p class="card-description">Total revenue generated per month</p>
+                        </div>
+                        <select id="salesTimeFilter" class="time-filter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; cursor: pointer; outline: none;" onchange="updateTrendChart('sales', this.value)">
+                            <option value="1">Last 1 Month</option>
+                            <option value="3">Last 3 Months</option>
+                            <option value="6" selected>Last 6 Months</option>
+                            <option value="12">Last 12 Months</option>
+                            <option value="0">All Time</option>
+                        </select>
                     </div>
                     <div class="card-content">
                         <div class="chart-container" style="height: 400px;"><canvas id="salesChart"></canvas></div>

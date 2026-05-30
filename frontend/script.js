@@ -440,8 +440,13 @@ async function fetchAlerts() {
 
 /* ---------------- CHART UTILS ---------------- */
 
-function fetchAndRenderChart(urlKey, chartId, initFn, options) {
-    fetchWithAuth(API_URLS[urlKey])
+function fetchAndRenderChart(urlKey, chartId, initFn, options, queryParams = {}) {
+    let url = API_URLS[urlKey];
+    if (Object.keys(queryParams).length > 0) {
+        const params = new URLSearchParams(queryParams);
+        url += `?${params.toString()}`;
+    }
+    fetchWithAuth(url)
         .then(res => res.json())
         .then(data => initFn(chartId, data, options))
         .catch(e => {
@@ -467,6 +472,19 @@ function createOrUpdateChart(chartId, config) {
     if (charts[chartId]) charts[chartId].destroy();
     charts[chartId] = new Chart(ctx, config);
 }
+
+window.updateTrendChart = function(type, months) {
+    if (type === 'profit') {
+        fetchAndRenderChart('profitTrend', 'profitChart', initializeLineChart,
+            { label: 'Profit Margin (%)', color: '#3b82f6' }, { months: months });
+    } else if (type === 'delivery') {
+        fetchAndRenderChart('deliveryTrend', 'deliveryChart', initializeBarChart,
+            { label: 'Delivery Performance (%)', color: '#10b981', yMin: 85, yMax: 100 }, { months: months });
+    } else if (type === 'sales') {
+        fetchAndRenderChart('salesTrend', 'salesChart', initializeLineChart,
+            { label: 'Monthly Sales ($)', color: '#8b5cf6' }, { months: months });
+    }
+};
 
 function initializeLineChart(id, data, opt) {
     createOrUpdateChart(id, {
