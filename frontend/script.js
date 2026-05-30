@@ -171,10 +171,14 @@ function handleFetchError(error, context) {
 async function loadDataForSection(sectionName) {
     if (sectionName === 'executive') {
         fetchKpis();
+        const profitMonths = document.getElementById('profitTimeFilter')?.value || 6;
         fetchAndRenderChart('profitTrend', 'profitChart', initializeLineChart,
-            { label: 'Profit Margin (%)', color: '#3b82f6' });
+            { label: 'Profit Margin (%)', color: '#3b82f6' }, { months: profitMonths });
+            
+        const deliveryMonths = document.getElementById('deliveryTimeFilter')?.value || 6;
         fetchAndRenderChart('deliveryTrend', 'deliveryChart', initializeBarChart,
-            { label: 'Delivery Performance (%)', color: '#10b981', yMin: 85, yMax: 100 });
+            { label: 'Delivery Performance (%)', color: '#10b981', yMin: 85, yMax: 100 }, { months: deliveryMonths });
+            
         fetchOrderOverview();
         fetchSuccessPrediction();
     } else if (sectionName === 'comparison') {
@@ -182,8 +186,9 @@ async function loadDataForSection(sectionName) {
             { label: 'Revenue by Country ($)', color: '#22c55e', indexAxis: 'y' });
         initGlobe();
     } else if (sectionName === 'sales') {
+        const salesMonths = document.getElementById('salesTimeFilter')?.value || 6;
         fetchAndRenderChart('salesTrend', 'salesChart', initializeLineChart,
-            { label: 'Monthly Sales ($)', color: '#8b5cf6' });
+            { label: 'Monthly Sales ($)', color: '#8b5cf6' }, { months: salesMonths });
         loadOrders();
     } else if (sectionName === 'orders') {
         loadOrders();
