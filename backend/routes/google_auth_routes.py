@@ -172,7 +172,10 @@ def google_callback(code: str = Query(...), state: str | None = Query(None), db:
     else:
         dashboard_url = "/dashboard"
 
-    response = RedirectResponse(url=dashboard_url, status_code=302)
+    # Append tokens to the URL query string so the frontend can capture them
+    redirect_url = f"{dashboard_url}?access_token={access}&refresh_token={refresh}"
+
+    response = RedirectResponse(url=redirect_url, status_code=302)
     _set_access_cookie(response, access)
     _set_refresh_cookie(response, refresh)
 

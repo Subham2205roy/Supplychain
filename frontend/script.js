@@ -790,6 +790,32 @@ function setupThemeToggle() {
     });
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+    // ---- Handle Google Auth URL Tokens ----
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+        try {
+            const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
+            const res = await fetch(apiBase + '/api/auth/store-tokens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken })
+            });
+            if (res.ok) {
+                // Clear the tokens from the URL without reloading the page
+                window.history.replaceState({}, document.title, window.location.pathname);
+                window.location.reload();
+            }
+        } catch (e) {
+            console.error('Failed to store URL tokens', e);
+        }
+    }
+    // ----------------------------------------
+});
+
 /* ====================================================================
    PHASE 1: ORDER MANAGEMENT
    ==================================================================== */

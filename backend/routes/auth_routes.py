@@ -12,6 +12,12 @@ from backend.models.user_model import User
 from backend.models.company_model import Company
 from backend.models.team_invite_model import TeamInvite
 from backend.schemas import UserCreate, UserLogin, UserResponse, Token
+from pydantic import BaseModel
+
+class TokenExchange(BaseModel):
+    access_token: str
+    refresh_token: str
+
 from backend.routes.auth_utils import (
     hash_password,
     verify_password,
@@ -202,6 +208,14 @@ def refresh_token(
 def logout(response: Response):
     _clear_cookies(response)
     return {"message": "Logged out"}
+
+
+@router.post("/api/auth/store-tokens")
+def store_tokens(tokens: TokenExchange, response: Response):
+    """Endpoint for Vercel proxy to set cookies when passed tokens from the frontend."""
+    _set_access_cookie(response, tokens.access_token)
+    _set_refresh_cookie(response, tokens.refresh_token)
+    return {"message": "Tokens stored successfully"}
 
 
 def get_current_user(
