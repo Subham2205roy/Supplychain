@@ -7,6 +7,19 @@ from sqlalchemy import func, case, and_
 from backend.database.database import get_db, date_format
 from backend.models.sales_model import Sale
 import datetime
+
+def get_last_n_months(n=6):
+    today = datetime.date.today()
+    months = []
+    for i in range(n - 1, -1, -1):
+        month = today.month - i
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        months.append(f"{year}-{month:02d}")
+    return months
+
 from backend.routes.auth_routes import get_current_user
 from backend.models.user_model import User
 
@@ -92,15 +105,18 @@ def get_profit_trend(
         Sale.company_id == current_user.company_id
     ).group_by("month").order_by("month").all()
     
-    labels = [row.month for row in monthly_profit]
-    # Handle revenue calculation safely
-    data = []
+    labels = get_last_n_months(6)
+    data_dict = {month: 0.0 for month in labels}
+    
     for r in monthly_profit:
-        rev = r.total_revenue or 0
-        cost = r.total_cost or 0
-        margin = round(((rev - cost) / rev) * 100, 2) if rev > 0 else 0
-        data.append(margin)
-        
+        month = r.month
+        if month in data_dict:
+            rev = r.total_revenue or 0
+            cost = r.total_cost or 0
+            margin = round(((rev - cost) / rev) * 100, 2) if rev > 0 else 0
+            data_dict[month] = margin
+            
+    data = [data_dict[month] for month in labels]
     return {"labels": labels, "data": data}
 
 @router.get("/api/delivery-trend")
@@ -119,14 +135,18 @@ def get_delivery_trend(
         Sale.company_id == current_user.company_id
     ).group_by("month").order_by("month").all()
     
-    labels = [row.month for row in delivery_data]
-    data = []
+    labels = get_last_n_months(6)
+    data_dict = {month: 0.0 for month in labels}
+    
     for row in delivery_data:
-        total = row.total_delivered or 0
-        on_time = row.on_time or 0
-        perf = round((on_time / total) * 100, 1) if total > 0 else 0
-        data.append(perf)
-        
+        month = row.month
+        if month in data_dict:
+            total = row.total_delivered or 0
+            on_time = row.on_time or 0
+            perf = round((on_time / total) * 100, 1) if total > 0 else 0
+            data_dict[month] = perf
+            
+    data = [data_dict[month] for month in labels]
     return {"labels": labels, "data": data}
 
 @router.get("/api/gdp-comparison")
@@ -271,7 +291,14 @@ def get_sales_trend(
     ) \
      .group_by("month").order_by("month").all()
 
-    labels = [row.month for row in monthly_sales]
-    data = [row.total_revenue for row in monthly_sales]
+    labels = get_last_n_months(6)
+    data_dict = {month: 0.0 for month in labels}
+    
+    for row in monthly_sales:
+        month = row.month
+        if month in data_dict:
+            data_dict[month] = row.total_revenue or 0.0
+            
+    data = [data_dict[month] for month in labels]
 
     return {"labels": labels, "data": data}
