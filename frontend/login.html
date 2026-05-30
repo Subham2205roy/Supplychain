@@ -800,6 +800,7 @@
                 const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
                 const response = await fetch(apiBase + '/api/login', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
@@ -807,6 +808,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                    }
+                    if (data.refresh_token) {
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                    }
                     text.textContent = 'Redirecting...';
                     window.location.replace('/dashboard');
                 } else {
@@ -847,6 +854,7 @@
                 const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
                 const response = await fetch(apiBase + '/api/register', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, email, password })
                 });

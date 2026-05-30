@@ -57,13 +57,38 @@ let charts = {};
 async function fetchWithAuth(url, options = {}) {
     const opts = { credentials: "include", ...options };
     opts.headers = { ...(options.headers || {}) };
+    
+    // Always inject the Bearer token from localStorage to bypass Vercel proxy cookie bugs
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        opts.headers['Authorization'] = `Bearer ${token}`;
+    }
 
     let response = await fetch(url, opts);
     if (response.status !== 401) return response;
 
     try {
-        const refresh = await fetch(API_SERVER_URL + "/api/refresh", { method: "POST", credentials: "include" });
+        const refreshTokenStr = localStorage.getItem('refresh_token');
+        const refreshOpts = { 
+            method: "POST", 
+            credentials: "include",
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (refreshTokenStr) {
+            refreshOpts.body = JSON.stringify({ refresh_token: refreshTokenStr });
+        }
+        
+        const refresh = await fetch(API_SERVER_URL + "/api/refresh", refreshOpts);
+        
         if (refresh.ok) {
+            const refreshData = await refresh.json();
+            if (refreshData.access_token) {
+                localStorage.setItem('access_token', refreshData.access_token);
+                opts.headers['Authorization'] = `Bearer ${refreshData.access_token}`;
+            }
+            if (refreshData.refresh_token) {
+                localStorage.setItem('refresh_token', refreshData.refresh_token);
+            }
             response = await fetch(url, opts);
             if (response.status !== 401) return response;
         }
@@ -797,6 +822,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const refreshToken = urlParams.get('refresh_token');
 
     if (accessToken && refreshToken) {
+        // Save to localStorage immediately to bypass Vercel proxy cookie stripping bugs
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
+        
         try {
             const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '');
             const res = await fetch(apiBase + '/api/auth/store-tokens', {

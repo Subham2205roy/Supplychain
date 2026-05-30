@@ -180,15 +180,20 @@ def login(request: Request, user_credentials: UserLogin, response: Response, db:
     _set_access_cookie(response, access)
     _set_refresh_cookie(response, refresh)
 
-    return {"access_token": access, "token_type": "bearer", "username": user.username}
+    return {"access_token": access, "token_type": "bearer", "username": user.username, "refresh_token": refresh}
 
 
-@router.post("/api/refresh", response_model=Token)
+class RefreshRequest(BaseModel):
+    refresh_token: str | None = None
+
+@router.post("/api/refresh")
 def refresh_token(
     response: Response,
-    refresh_token: str | None = Cookie(default=None),
+    req: RefreshRequest | None = None,
+    refresh_cookie: str | None = Cookie(alias="refresh_token", default=None),
     db: Session = Depends(get_db),
 ):
+    refresh_token = (req.refresh_token if req else None) or refresh_cookie
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Missing refresh token")
 
@@ -201,7 +206,7 @@ def refresh_token(
     _set_access_cookie(response, access)
     _set_refresh_cookie(response, new_refresh)
 
-    return {"access_token": access, "token_type": "bearer", "username": user.username}
+    return {"access_token": access, "token_type": "bearer", "username": user.username, "refresh_token": new_refresh}
 
 
 @router.post("/api/logout")
